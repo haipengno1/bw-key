@@ -1,6 +1,13 @@
 [package]
 name = "bw-key"
+description = "Tool for add keys to ssh-agent from bitwarden server"
 version = "0.1.0"
+license = "Apache"
+authors = [
+    "berton wang <haipengno1@gmail.com>"
+]
+repository = "https://github.com/haipengno1/bw-key"
+readme = "README.md"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
