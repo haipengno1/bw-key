@@ -1,4 +1,5 @@
 use std::borrow::Borrow;
+use std::io::Read;
 use serde_json::to_string;
 use ureq::OrAnyStatus;
 use crate::{cipherstring, Keys};
@@ -130,8 +131,8 @@ struct ConnectErrorResErrorModel {
 #[derive(Debug)]
 pub struct SSHKeyRecord {
     pub name: String,
-    pub passwd: String,
-    pub raw_key: String,
+    pub passwd: Option<String>,
+    pub raw_key: Vec<u8>,
 }
 
 #[derive(serde::Deserialize, Debug)]
@@ -183,7 +184,7 @@ pub struct SSHKeyRecord {
     #[serde(rename = "Size")]
     size: String,
     #[serde(rename = "FileName")]
-     file_name: Option<String>,
+     file_name: String,
     #[serde(rename = "Url")]
      url: String,
 }
@@ -395,17 +396,33 @@ impl Client {
         }
     }
 
-    fn decrypt_byte(src:&String, pkey: &Keys) -> Vec<u8> {
-        let cipherstring = cipherstring::CipherString::new(src.as_str()).unwrap();
-        let bytes = cipherstring.decrypt_symmetric(pkey).unwrap();
-        return bytes
-    }
     fn decrypt( &self,src:&String,pkey: &Keys) -> String {
         let cipherstring = cipherstring::CipherString::new(src.as_str()).unwrap();
         let plaintext = String::from_utf8(
             cipherstring.decrypt_symmetric(pkey).unwrap(),
         ).unwrap();
         return plaintext
+    }
+    fn get_raw_file(&self, url:&str, file_key:&String, pkey: &Keys) -> Vec<u8> {
+        let resp = ureq::get(url)
+            .call().unwrap();
+
+        let len = resp.header("Content-Length")
+            .and_then(|s| s.parse::<usize>().ok()).unwrap();
+
+        let mut file: Vec<u8> = Vec::with_capacity(len);
+        resp.into_reader()
+            .take(10_000_000)
+            .read_to_end(&mut file).unwrap();
+
+        let cipherstring = cipherstring::CipherString::new(file_key.as_str()).unwrap();
+        let file_master_keys = cipherstring.decrypt_symmetric(pkey).unwrap();
+
+        let mut file_master_keysVec = crate::locked::Vec::from_str(file_master_keys.as_slice());
+
+        let file_pkey=crate::locked::Keys::new(file_master_keysVec);
+        let cipherstring = cipherstring::CipherString::from_raw_bytes(file.as_slice()).unwrap();
+        return cipherstring.decrypt_symmetric(&file_pkey).unwrap()
     }
     pub fn get_ssh_keys(
         &self,
@@ -419,11 +436,11 @@ impl Client {
             Ok(resp) => {
                 let sync_res: SyncRes = resp.into_json().context(crate::error::Ureq)?;
                 //find ssh folder
-                let mut ssh_folder_id:String=String::new();;
+                let mut ssh_folder_id:&String= &String::new();
                 for folder in &sync_res.folders {
                     let plaintext = self.decrypt(&folder.name, pkey);
                     if plaintext.eq_ignore_ascii_case("SSH") {
-                        ssh_folder_id=folder.clone().id;
+                        ssh_folder_id= &folder.id;
                         break
                     }
                 }
@@ -431,14 +448,17 @@ impl Client {
                 if ssh_folder_id !=""{
                     println!(" Found SSH folder.");
                     // SSHKeyRecord
-                    let ssh_keys:Vec<SSHKeyRecord>=Vec::new();
+                    let mut ssh_keys:Vec<SSHKeyRecord>=Vec::new();
                     for cipher in &sync_res.ciphers {
                         cipher.folder_id.as_ref().map(|cipher_folder_idstr|{
-                            if cipher_folder_idstr.eq(&ssh_folder_id) {
+                            if cipher_folder_idstr.eq(ssh_folder_id) {
+                                let password=cipher.login.as_ref().map_or(
+                                    Option::None,
+                                    |login|login.password.as_ref())
+                                    .map(|pass|self.decrypt(pass, pkey));
                                 cipher.attachments.as_ref().map(|attach|{
-                                    let password=self.decrypt(&cipher.clone().login.unwrap().password.unwrap(), pkey);
                                     let att=attach[0].clone();
-                                    let file_name=self.decrypt(&att.file_name.unwrap(), pkey);
+                                    let file_name=self.decrypt(&att.file_name, pkey);
                                     let url=&att.url;
                                     let mut auto_load=true;
                                     cipher.fields.as_ref().map(|fields|{
@@ -456,7 +476,13 @@ impl Client {
                                         }
                                     });
                                     if auto_load {
-                                        println!("{:x?},{:x?}:{:x?}:{:x?}", file_name,password,url,att.key);
+                                        let raw_key=self.get_raw_file(url,&att.key,pkey);
+                                        let ssh_key=SSHKeyRecord{
+                                            name: file_name,
+                                            passwd: password,
+                                            raw_key,
+                                        };
+                                        ssh_keys.push(ssh_key);
                                     }
                                 });
                             }

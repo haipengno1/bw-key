@@ -42,18 +42,18 @@ fn decrypt( src:&String,pkey: &Keys) -> String {
 /// I am a program and I work, just pass `-h`
 struct Args {
     #[structopt( short, long, help = "your self-hosted server address")]
-    url: Option<String>,
+    host: Option<String>,
     #[structopt( short, long, help = "your name")]
     name: Option<String>,
 }
 #[paw::main]
 fn main(args: Args)-> Result<(), crate::error::Error>  {
-    let base_url=args.url.clone().map_or_else(
-        || "https://api.bitwarden.com".to_string(),
+    let base_url=args.host.clone().map_or(
+        "https://api.bitwarden.com".to_string(),
         |url| format!("{}/api", url),
     );
-    let identity_url=args.url.clone().map_or_else(
-        || "https://identity.bitwarden.com".to_string(),
+    let identity_url=args.host.clone().map_or(
+        "https://identity.bitwarden.com".to_string(),
         |url| format!("{}/identity", url),
     );
    let email= match args.name.clone() {
@@ -88,53 +88,44 @@ fn main(args: Args)-> Result<(), crate::error::Error>  {
         .decrypt_locked_symmetric(&identity.keys)?;
     let pkey=crate::locked::Keys::new(master_keys);
     //get ssh keys
-    let res=client.sync(access_token.as_str()).unwrap();
-    let mut ssh_folder_id:String=String::new();;
+    let ssh_keys = client.get_ssh_keys(access_token.as_str(), &pkey).unwrap();
+    let ssh_socket_key = env::var("SSH_AUTH_SOCK").unwrap();
+    // todo windows \.\pipe\openssh-ssh-agent
+    let ssh_socket=Path::new(&ssh_socket_key);
+    let mut client = UnixStream::connect(ssh_socket).unwrap();
+    for ssh_key in ssh_keys {
 
-    for folder in res.folders {
-        let plaintext = decrypt(&folder.name, &pkey);
-        if plaintext.eq_ignore_ascii_case("SSH") {
-            println!(" {:x?}: {:x?}", &folder.id,plaintext);
-            ssh_folder_id=folder.id;
-            println!(" found SSH folder");
-            break
-        }
-    }
-    if ssh_folder_id !=""{
-        for cipher in res.ciphers {
-            let cipher_folder_id=cipher.folder_id.clone();
-            match cipher_folder_id {
-                Some(cipher_folder_idstr)=>{
-                    if cipher_folder_idstr==ssh_folder_id {
-                        match cipher.attachments.clone() {
-                            Some(attach)=>{
-                                let cli=cipher.clone();
-                                let name=decrypt(&cipher.name, &pkey);
-                                let password=decrypt(&cipher.login.unwrap().password.unwrap(), &pkey);
-                                let att=attach[0].clone();
-                                let file_name=decrypt(&att.file_name.unwrap(), &pkey);
-                                let url=&att.url;
-                                match cipher.fields.clone() {
-                                    Some(fields) => {
-                                        let field=&fields[0];
-                                        let field_name =field.name.clone().unwrap();
-                                        let field_value =field.value.clone().unwrap();
-                                        let field_name =decrypt(&field_name, &pkey);
-                                        let field_value =decrypt(&field_value, &pkey);
-                                        println!("field:{:x?}:{:x?}", field_name, field_value);
-                                    }
-                                    _ => {}
-                                }
-                                println!("{:x?},{:x?}:{:x?}:{:x?}", name,password,file_name,att.key);
-                                println!("{:x?}", cli);
-                            }
-                            _ => {}
-                        }
-                    }
-                }
-                _ => {}
-            }
-        }
+        let private_key: PKey<Private> =ssh_key.passwd.map_or_else(
+            ||PKey::private_key_from_pem(ssh_key.raw_key.as_slice()).unwrap(),
+            |passphrase|PKey::private_key_from_pem_passphrase(ssh_key.raw_key.as_slice(), passphrase.as_bytes()).unwrap(),
+        );
+        let rsa_key:Rsa<Private>= Rsa::try_from(private_key).unwrap();
+        let n = rsa_key.n().to_vec_padded(257).unwrap();
+        let e = rsa_key.e().to_vec();
+        let d = rsa_key.d().to_vec();
+        let p = rsa_key.p().unwrap().to_vec_padded(129).unwrap();
+        let q = rsa_key.q().unwrap().to_vec_padded(129).unwrap();
+        // let dp = &d % &(&p - &BigNum::from_u32(1)?);
+        // let dq = &d % &(&q - &BigNum::from_u32(1)?);
+
+        let key = RsaPrivateKey{
+            n,
+            e,
+            d,
+            iqmp: Vec::new(),
+            p,
+            q
+        };
+        let identity=Identity {
+            private_key: PrivateKey::Rsa(key),
+            comment: ssh_key.name.clone(),
+        };
+
+        // // Write to the client
+        let req = Message::AddIdentity(identity);
+        let req_bytes =to_bytes(&to_bytes(&req).unwrap()).unwrap();
+        client.write(req_bytes.as_slice());
+        println!("Add ssh key:{}",ssh_key.name);
     }
     Ok(())
 }
