@@ -135,27 +135,27 @@ pub struct SSHKeyRecord {
 }
 
 #[derive(serde::Deserialize, Debug)]
-pub struct SyncRes {
+ struct SyncRes {
     #[serde(rename = "Ciphers")]
-    pub ciphers: Vec<SyncResCipher>,
+     ciphers: Vec<SyncResCipher>,
     #[serde(rename = "Profile")]
     profile: SyncResProfile,
     #[serde(rename = "Folders")]
-    pub folders: Vec<SyncResFolder>,
+     folders: Vec<SyncResFolder>,
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
-pub struct SyncResCipher {
+ struct SyncResCipher {
     #[serde(rename = "Id")]
-    pub id: String,
+     id: String,
     #[serde(rename = "FolderId")]
-    pub folder_id: Option<String>,
+     folder_id: Option<String>,
     #[serde(rename = "OrganizationId")]
-    pub organization_id: Option<String>,
+     organization_id: Option<String>,
     #[serde(rename = "Name")]
-    pub name: String,
+     name: String,
     #[serde(rename = "Login")]
-    pub login: Option<CipherLogin>,
+     login: Option<CipherLogin>,
     #[serde(rename = "Card")]
     card: Option<CipherCard>,
     #[serde(rename = "Identity")]
@@ -167,15 +167,15 @@ pub struct SyncResCipher {
     #[serde(rename = "PasswordHistory")]
     password_history: Option<Vec<SyncResPasswordHistory>>,
     #[serde(rename = "Fields")]
-    pub fields: Option<Vec<SyncResField>>,
+     fields: Option<Vec<SyncResField>>,
     #[serde(rename = "DeletedDate")]
     deleted_date: Option<String>,
     #[serde(rename = "Attachments")]
-    pub attachments: Option<Vec<SyncResAttach>>,
+     attachments: Option<Vec<SyncResAttach>>,
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
-pub struct SyncResAttach {
+ struct SyncResAttach {
     #[serde(rename = "Id")]
     id: String,
     #[serde(rename = "Key")]
@@ -183,9 +183,9 @@ pub struct SyncResAttach {
     #[serde(rename = "Size")]
     size: String,
     #[serde(rename = "FileName")]
-    pub file_name: Option<String>,
+     file_name: Option<String>,
     #[serde(rename = "Url")]
-    pub url: String,
+     url: String,
 }
 
 #[derive(serde::Deserialize, Debug)]
@@ -207,19 +207,19 @@ struct SyncResProfileOrganization {
 }
 
 #[derive(serde::Deserialize, Debug, Clone)]
-pub struct SyncResFolder {
+ struct SyncResFolder {
     #[serde(rename = "Id")]
-    pub id: String,
+     id: String,
     #[serde(rename = "Name")]
-    pub name: String,
+     name: String,
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
-pub struct CipherLogin {
+ struct CipherLogin {
     #[serde(rename = "Username")]
     username: Option<String>,
     #[serde(rename = "Password")]
-    pub password: Option<String>,
+     password: Option<String>,
     #[serde(rename = "Totp")]
     totp: Option<String>,
     #[serde(rename = "Uris")]
@@ -300,13 +300,13 @@ struct SyncResPasswordHistory {
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
-pub struct SyncResField {
+ struct SyncResField {
     #[serde(rename = "Type")]
-    pub ty: u32,
+     ty: u32,
     #[serde(rename = "Name")]
-    pub name: String,
+     name: String,
     #[serde(rename = "Value")]
-    pub value: String,
+     value: String,
 }
 
 
@@ -407,11 +407,11 @@ impl Client {
         ).unwrap();
         return plaintext
     }
-    pub fn sync(
+    pub fn get_ssh_keys(
         &self,
         access_token: &str,
         pkey: &Keys,
-    ) -> Result<SyncRes> {
+    ) -> Result<Vec<SSHKeyRecord>> {
         let res = ureq::get(&self.api_url("/sync"))
             .set("Authorization", format!("Bearer {}", access_token).as_str())
             .call();
@@ -462,10 +462,10 @@ impl Client {
                             }
                         });
                     }
+                    Ok(ssh_keys)
                 }else{
-                    println!("Not  found SSH folder!Please Create it");
+                    Err(Error::SSHKeyFolderNotFound)
                 }
-                Ok(sync_res)
             },
             Err(ureq::Error::Status(code, res)) => {
                 if code==401 {

@@ -79,6 +79,9 @@ pub enum Error {
     #[snafu(display("api request unauthorized"))]
     RequestUnauthorized,
 
+    #[snafu(display("Not  found SSH folder!Please Create it"))]
+    SSHKeyFolderNotFound,
+
     #[snafu(display("error making api request"))]
     UreqErr,
 
