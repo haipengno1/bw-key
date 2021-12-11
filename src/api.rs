@@ -1,11 +1,8 @@
 use std::borrow::Borrow;
 use serde_json::to_string;
 use ureq::OrAnyStatus;
+use crate::{cipherstring, Keys};
 use crate::prelude::*;
-
-// use crate::json::{
-//     DeserializeJsonWithPath as _, DeserializeJsonWithPathAsync as _,
-// };
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum TwoFactorProviderType {
@@ -128,6 +125,13 @@ struct ConnectErrorRes {
 struct ConnectErrorResErrorModel {
     #[serde(rename = "Message")]
     message: String,
+}
+
+#[derive(Debug)]
+pub struct SSHKeyRecord {
+    pub name: String,
+    pub passwd: String,
+    pub raw_key: String,
 }
 
 #[derive(serde::Deserialize, Debug)]
@@ -300,9 +304,9 @@ pub struct SyncResField {
     #[serde(rename = "Type")]
     pub ty: u32,
     #[serde(rename = "Name")]
-    pub name: Option<String>,
+    pub name: String,
     #[serde(rename = "Value")]
-    pub value: Option<String>,
+    pub value: String,
 }
 
 
@@ -391,17 +395,76 @@ impl Client {
         }
     }
 
+    fn decrypt_byte(src:&String, pkey: &Keys) -> Vec<u8> {
+        let cipherstring = cipherstring::CipherString::new(src.as_str()).unwrap();
+        let bytes = cipherstring.decrypt_symmetric(pkey).unwrap();
+        return bytes
+    }
+    fn decrypt( &self,src:&String,pkey: &Keys) -> String {
+        let cipherstring = cipherstring::CipherString::new(src.as_str()).unwrap();
+        let plaintext = String::from_utf8(
+            cipherstring.decrypt_symmetric(pkey).unwrap(),
+        ).unwrap();
+        return plaintext
+    }
     pub fn sync(
         &self,
         access_token: &str,
+        pkey: &Keys,
     ) -> Result<SyncRes> {
         let res = ureq::get(&self.api_url("/sync"))
             .set("Authorization", format!("Bearer {}", access_token).as_str())
             .call();
         match res {
             Ok(resp) => {
-                let sync_res: SyncRes =
-                    resp.into_json().context(crate::error::Ureq)?;
+                let sync_res: SyncRes = resp.into_json().context(crate::error::Ureq)?;
+                //find ssh folder
+                let mut ssh_folder_id:String=String::new();;
+                for folder in &sync_res.folders {
+                    let plaintext = self.decrypt(&folder.name, pkey);
+                    if plaintext.eq_ignore_ascii_case("SSH") {
+                        ssh_folder_id=folder.clone().id;
+                        break
+                    }
+                }
+                //get ssh keys
+                if ssh_folder_id !=""{
+                    println!(" Found SSH folder.");
+                    // SSHKeyRecord
+                    let ssh_keys:Vec<SSHKeyRecord>=Vec::new();
+                    for cipher in &sync_res.ciphers {
+                        cipher.folder_id.as_ref().map(|cipher_folder_idstr|{
+                            if cipher_folder_idstr.eq(&ssh_folder_id) {
+                                cipher.attachments.as_ref().map(|attach|{
+                                    let password=self.decrypt(&cipher.clone().login.unwrap().password.unwrap(), pkey);
+                                    let att=attach[0].clone();
+                                    let file_name=self.decrypt(&att.file_name.unwrap(), pkey);
+                                    let url=&att.url;
+                                    let mut auto_load=true;
+                                    cipher.fields.as_ref().map(|fields|{
+                                        for field in fields{
+                                            let field_name =self.decrypt(&field.name, pkey);
+                                            let field_value =self.decrypt(&field.value, pkey);
+                                            if field.ty==2 {
+                                                if field_name.eq_ignore_ascii_case("autoload") {
+                                                    if field_value.eq_ignore_ascii_case("false") {
+                                                        auto_load=false;
+                                                    }
+                                                    break;
+                                                }
+                                            }
+                                        }
+                                    });
+                                    if auto_load {
+                                        println!("{:x?},{:x?}:{:x?}:{:x?}", file_name,password,url,att.key);
+                                    }
+                                });
+                            }
+                        });
+                    }
+                }else{
+                    println!("Not  found SSH folder!Please Create it");
+                }
                 Ok(sync_res)
             },
             Err(ureq::Error::Status(code, res)) => {
