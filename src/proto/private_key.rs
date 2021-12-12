@@ -1,3 +1,5 @@
+use openssl::pkey::{PKey, Private};
+use openssl::rsa::Rsa;
 use serde::{Deserialize, Serialize};
 use serde::de::{Deserializer, Error};
 use serde::ser::{Serializer, SerializeTuple};
@@ -45,7 +47,41 @@ pub enum PrivateKey {
     Rsa(RsaPrivateKey),
     EcDsa(EcDsaPrivateKey)
 }
+impl TryFrom<PKey<Private>> for PrivateKey {
+    type Error = &'static str;
 
+    fn try_from(pkey: PKey<Private>) -> Result<Self, Self::Error> {
+        match pkey.id() {
+            openssl::pkey::Id::RSA => {
+                let rsa_key:Rsa<Private>= Rsa::try_from(pkey).unwrap();
+                let n = rsa_key.n().to_vec_padded(257).unwrap();
+                let e = rsa_key.e().to_vec();
+                let d = rsa_key.d().to_vec();
+                let p = rsa_key.p().unwrap().to_vec_padded(129).unwrap();
+                let q = rsa_key.q().unwrap().to_vec_padded(129).unwrap();
+
+                let key = RsaPrivateKey{
+                    n,
+                    e,
+                    d,
+                    iqmp: Vec::new(),
+                    p,
+                    q
+                };
+                Ok(PrivateKey::Rsa(key))
+            }
+            openssl::pkey::Id::HMAC => Err("not support type"),
+            openssl::pkey::Id::DSA => Err("not support type"),
+            openssl::pkey::Id::DH => Err("not support type"),
+            openssl::pkey::Id::EC =>Err("not support type"),
+            #[cfg(ossl111)]
+            Id::ED25519 => Err("not support type"),
+            #[cfg(ossl111)]
+            Id::ED448 => Err("not support type"),
+            _ =>  Err("unknown type"),
+        }
+    }
+}
 impl KeyType for RsaPrivateKey {
     const KEY_TYPE: &'static str = "ssh-rsa";
 }
