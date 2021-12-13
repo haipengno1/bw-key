@@ -17,14 +17,11 @@ paw = "1.0.0"
 rpassword = "5.0"
 structopt = { version = "0.3.25", features = ["paw"] }
 ureq = { version = "*", features = ["json", "charset"] }
-aes = "0.7.5"
 byteorder = "1.4.3"
-openssl="0.10.38"
 serde = {version = "1.0.87", features = ["derive"]}
 log = "0.4.6"
 bytes = { version = "0.4.11", optional = true }
 snafu = "0.6"
-#reqwest = { version = "0.11.6", features = ["blocking", "json"] }
 uuid = { version = "0.8", features = ["v4"] }
 zeroize = "1.1"
 base64 = "0.13"
@@ -32,11 +29,30 @@ region = "3.0.0"
 arrayvec = "0.5"
 serde_json = "1.0"
 serde_path_to_error = "0.1"
-block-modes = "0.8.1"
+cryptovec="0.6.1"
+bcrypt-pbkdf="0.7.1"
 ring = "0.16"
-#tokio = { version = "1.14.0", features = ["full"] }
-#async-trait = "0.1"
+#osshkeys="0.5.2"
 rand = "0.7"
+nom_pem="4.0.0"
+[dependencies.block-modes]
+version = "0.8.1"
+optional = true
+[dependencies.aes]
+version = "0.7.4"
+features = ["ctr"]
+optional = true
+[dependencies.des]
+version = "0.7.0"
+optional = true
+[dependencies.cipher]
+version = "0.3.0"
+features = ["std"]
+optional = true
+[features]
+default = ["rustcrypto-cipher"]
+rustcrypto-cipher = ["block-modes", "aes", "des", "cipher"]
+
 [[bin]]
 name = "bw-key"
 path = "src/main.rs"

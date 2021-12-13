@@ -1,4 +1,12 @@
-// extern crate openssl;
+use std::{env, io};
+use std::convert::TryFrom;
+use std::io::Write;
+use std::os::unix::net::UnixStream;
+use std::path::Path;
+
+use crate::locked::Keys;
+use crate::ossh_privkey::parse_keystr;
+use crate::proto::{Identity, Message, PrivateKey, to_bytes};
 
 mod proto;
 
@@ -7,38 +15,10 @@ mod api;
 mod error;
 mod locked;
 mod identity;
+mod cipher;
+mod sshbuf;
 mod cipherstring;
-
-
-use std::borrow::Borrow;
-use std::convert::TryFrom;
-use std::{env, fmt, io};
-use std::env::args;
-use std::error::Error;
-use std::fs::File;
-use std::io::{Write};
-use std::os::unix::net::UnixStream;
-use std::path::Path;
-use openssl::pkey::{PKey, Private};
-use openssl::rsa::Rsa;
-use serde_json::to_string;
-use snafu::ResultExt;
-use crate::locked::Keys;
-use crate::proto::{Identity, Message, PrivateKey, RsaPrivateKey, to_bytes};
-
-fn decrypt_byte(src: &String, pkey: &Keys) -> Vec<u8> {
-    let cipherstring = cipherstring::CipherString::new(src.as_str()).unwrap();
-    let bytes = cipherstring.decrypt_symmetric(&pkey).unwrap();
-    return bytes;
-}
-
-fn decrypt(src: &String, pkey: &Keys) -> String {
-    let cipherstring = cipherstring::CipherString::new(src.as_str()).unwrap();
-    let plaintext = String::from_utf8(
-        cipherstring.decrypt_symmetric(&pkey).unwrap(),
-    ).unwrap();
-    return plaintext;
-}
+mod ossh_privkey;
 
 #[derive(structopt::StructOpt)]
 /// I am a program and I work, just pass `-h`
@@ -97,11 +77,7 @@ fn main(args: Args) -> Result<(), crate::error::Error> {
     let ssh_socket = Path::new(&ssh_socket_key);
     let mut client = UnixStream::connect(ssh_socket).unwrap();
     for ssh_key in ssh_keys {
-        let private_key: PKey<Private> = ssh_key.passwd.map_or_else(
-            || PKey::private_key_from_pem(ssh_key.raw_key.as_slice()).unwrap(),
-            |passphrase| PKey::private_key_from_pem_passphrase(ssh_key.raw_key.as_slice(), passphrase.as_bytes()).unwrap(),
-        );
-        let key: PrivateKey = PrivateKey::try_from(private_key).unwrap();
+        let key = parse_keystr(ssh_key.raw_key.as_slice(),  ssh_key.passwd.as_deref()).unwrap();
         let identity = Identity {
             private_key: key,
             comment: ssh_key.name.clone(),

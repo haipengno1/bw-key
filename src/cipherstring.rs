@@ -1,7 +1,6 @@
 use crate::prelude::*;
 
 use block_modes::BlockMode as _;
-use rand::RngCore as _;
 
 pub enum CipherString {
     Symmetric {
@@ -82,8 +81,8 @@ impl CipherString {
         }
     }
     pub fn from_raw_bytes(s: &[u8]) -> Result<Self> {
-        let encType=s[0];
-        match encType {
+        let enc_type =s[0];
+        match enc_type {
             2 => {
                 if (s.len() <= 49) { // 1 + 16 + 32 + ctLength
                     return Err(Error::InvalidCipherString {
@@ -104,37 +103,9 @@ impl CipherString {
                 })
             }
             _ => Err(Error::UnimplementedCipherStringType {
-                ty: encType.to_string(),
+                ty: enc_type.to_string(),
             }),
         }
-    }
-    pub fn encrypt_symmetric(
-        keys: &crate::locked::Keys,
-        plaintext: &[u8],
-    ) -> Result<Self> {
-        let iv = random_iv();
-
-        // ring doesn't currently support CBC ciphers, so we have to do it
-        // manually. see https://github.com/briansmith/ring/issues/588
-        let cipher = block_modes::Cbc::<
-            aes::Aes256,
-            block_modes::block_padding::Pkcs7,
-        >::new_from_slices(keys.enc_key(), &iv)
-        .context(crate::error::CreateBlockMode)?;
-        let ciphertext = cipher.encrypt_vec(plaintext);
-
-        let mut digest = ring::hmac::Context::with_key(
-            &ring::hmac::Key::new(ring::hmac::HMAC_SHA256, keys.mac_key()),
-        );
-        digest.update(&iv);
-        digest.update(&ciphertext);
-        let mac = digest.sign().as_ref().to_vec();
-
-        Ok(Self::Symmetric {
-            iv,
-            ciphertext,
-            mac: Some(mac),
-        })
     }
 
     pub fn decrypt_symmetric(
@@ -195,43 +166,6 @@ impl CipherString {
             }),
         }
     }
-
-    pub fn decrypt_locked_asymmetric(
-        &self,
-        private_key: &crate::locked::PrivateKey,
-    ) -> Result<crate::locked::Vec> {
-        match self {
-            Self::Asymmetric { ciphertext } => {
-                // ring doesn't currently support asymmetric encryption (only
-                // signatures). see
-                // https://github.com/briansmith/ring/issues/691
-                let pkey = openssl::pkey::PKey::private_key_from_pkcs8(
-                    private_key.private_key(),
-                )
-                .context(crate::error::OpenSSL)?;
-                let rsa = pkey.rsa().context(crate::error::OpenSSL)?;
-
-                let mut res = crate::locked::Vec::new();
-                res.extend(std::iter::repeat(0).take(rsa.size() as usize));
-
-                let bytes = rsa
-                    .private_decrypt(
-                        ciphertext,
-                        res.data_mut(),
-                        openssl::rsa::Padding::PKCS1_OAEP,
-                    )
-                    .context(crate::error::OpenSSL)?;
-                res.truncate(bytes);
-
-                Ok(res)
-            }
-            _ => Err(Error::InvalidCipherString {
-                reason:
-                    "found a symmetric cipherstring, expecting asymmetric"
-                        .to_string(),
-            }),
-        }
-    }
 }
 
 fn decrypt_common_symmetric(
@@ -287,11 +221,4 @@ impl std::fmt::Display for CipherString {
             }
         }
     }
-}
-
-fn random_iv() -> Vec<u8> {
-    let mut iv = vec![0_u8; 16];
-    let mut rng = rand::thread_rng();
-    rng.fill_bytes(&mut iv);
-    iv
 }

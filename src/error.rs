@@ -1,3 +1,4 @@
+use crate::error;
 
 #[derive(Debug, snafu::Snafu)]
 #[snafu(visibility = "pub")]
@@ -64,9 +65,6 @@ pub enum Error {
         file: std::path::PathBuf,
     },
 
-    #[snafu(display("openssl error"))]
-    OpenSSL { source: openssl::error::ErrorStack },
-
     #[snafu(display("ureq error"))]
     Ureq { source: std::io::Error },
 
@@ -95,6 +93,45 @@ pub enum Error {
 
     #[snafu(display("Unknown IO error"))]
     UnknownIO { source: std::io::Error },
+
+    #[snafu(display("The key file's PEM part is invalid"))]
+    InvalidPemFormat,
+    #[snafu(display("The key type is not supported"))]
+    UnsupportType,
+    #[snafu(display("The passphrase is incorrect, can't decrypt the key"))]
+    IncorrectPass,
+    #[snafu(display("The key file has some invalid data in it"))]
+    InvalidKeyFormat,
+    #[snafu(display("The error is caused by OpenSSL, to get the underlying error, use [std::error::Error::source()](https://doc.rust-lang.org/std/error/trait.Error.html#method.source)"))]
+    OpenSslError,
+    #[snafu(display("The error is caused by ed25519-dalek, to get the underlying error, use [std::error::Error::source()](https://doc.rust-lang.org/std/error/trait.Error.html#method.source)"))]
+    Ed25519Error,
+    #[snafu(display("The error is caused by I/O error or reader error"))]
+    IOError,
+    #[snafu(display("Can't format some data"))]
+    FmtError,
+    #[snafu(display("The base64 string is invalid"))]
+    Base64Error,
+    #[snafu(display("The argument passed into the function is invalid"))]
+    InvalidArgument,
+    #[snafu(display("Currently not used..."))]
+    InvalidFormat,
+    #[snafu(display("Some parts of the key are invalid"))]
+    InvalidKey,
+    #[snafu(display("The key size is invalid"))]
+    InvalidKeySize,
+    #[snafu(display("The slice length is invalid"))]
+    InvalidLength,
+    #[snafu(display("The elliptic curve is not supported"))]
+    UnsupportCurve,
+    #[snafu(display("The encrypt cipher is not supported"))]
+    UnsupportCipher,
+    #[snafu(display("The key type is not the desired one"))]
+    TypeNotMatch,
+    #[snafu(display("The key or IV length can't meet the cipher's requirement"))]
+    InvalidKeyIvLength,
+    #[snafu(display("Something shouldn't happen but it DID happen..."))]
+    Unknown,
 }
 impl From<std::io::Error> for Error {
     fn from(error: std::io::Error) -> Self {
@@ -103,4 +140,5 @@ impl From<std::io::Error> for Error {
         }
     }
 }
+
 pub type Result<T> = std::result::Result<T, Error>;

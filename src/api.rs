@@ -1,7 +1,5 @@
 use std::borrow::Borrow;
 use std::io::Read;
-use serde_json::to_string;
-use ureq::OrAnyStatus;
 use crate::{cipherstring, Keys};
 use crate::prelude::*;
 
@@ -336,7 +334,7 @@ impl Client {
                     let prelogin_res: PreloginRes = resp.into_json().context(crate::error::Ureq)?;
                     Ok(prelogin_res.kdf_iterations)
                 }
-                Err(ureq::Error::Status(code, response)) => {
+                Err(ureq::Error::Status(code, _response)) => {
                     Err(Error::RequestFailed {status:code})
                 }
                 Err(_) => {
@@ -418,9 +416,9 @@ impl Client {
         let cipherstring = cipherstring::CipherString::new(file_key.as_str()).unwrap();
         let file_master_keys = cipherstring.decrypt_symmetric(pkey).unwrap();
 
-        let mut file_master_keysVec = crate::locked::Vec::from_str(file_master_keys.as_slice());
+        let  file_master_keys_vec = crate::locked::Vec::from_str(file_master_keys.as_slice());
 
-        let file_pkey=crate::locked::Keys::new(file_master_keysVec);
+        let file_pkey=crate::locked::Keys::new(file_master_keys_vec);
         let cipherstring = cipherstring::CipherString::from_raw_bytes(file.as_slice()).unwrap();
         return cipherstring.decrypt_symmetric(&file_pkey).unwrap()
     }
