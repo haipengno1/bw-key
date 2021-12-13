@@ -23,31 +23,11 @@ impl Cipher {
     ///
     /// Mostly used by the internal codes.
     /// Usually you don't need to call it directly.
-    pub fn encrypt(self, src: &[u8], key: &[u8], iv: &[u8]) -> Result<Vec<u8>> {
-        use Cipher::*;
-        match self {
-            Aes128_Cbc => aes128cbc_encrypt(src, key, iv),
-            Aes192_Cbc => aes192cbc_encrypt(src, key, iv),
-            Aes256_Cbc => aes256cbc_encrypt(src, key, iv),
-            Aes128_Ctr => aes128ctr_encrypt(src, key, iv),
-            Aes192_Ctr => aes192ctr_encrypt(src, key, iv),
-            Aes256_Ctr => aes256ctr_encrypt(src, key, iv),
-            TDes_Cbc => tdescbc_encrypt(src, key, iv),
-            Null => Ok(src.to_vec()),
-        }
-    }
 
     /// Decrypt the data
     ///
     /// Mostly used by the internal codes.
     /// Usually you don't need to call it directly.
-    pub fn decrypt(self, src: &[u8], key: &[u8], iv: &[u8]) -> Result<Vec<u8>> {
-        let mut buf = vec![0; self.calc_buffer_len(src.len())];
-        let n = self.decrypt_to(&mut buf, src, key, iv)?;
-        buf.truncate(n);
-        Ok(buf)
-    }
-
     pub fn decrypt_to(
         self,
         dest: &mut [u8],
@@ -142,21 +122,6 @@ impl Cipher {
         }
     }
 
-    /// Return the name using in OpenSSH
-    pub fn name(self) -> &'static str {
-        use Cipher::*;
-        match self {
-            Aes128_Cbc => "aes128-cbc",
-            Aes192_Cbc => "aes192-cbc",
-            Aes256_Cbc => "aes256-cbc",
-            Aes128_Ctr => "aes128-ctr",
-            Aes192_Ctr => "aes192-ctr",
-            Aes256_Ctr => "aes256-ctr",
-            TDes_Cbc => "3des-cbc",
-            Null => "none",
-        }
-    }
-
     /// Return `true` if `Cipher::Null`
     ///
     /// This is a method for check the null cipher easily
@@ -165,13 +130,6 @@ impl Cipher {
         self == Cipher::Null
     }
 
-    /// Return `true` if not `Cipher::Null`
-    ///
-    /// This is a method to check the null cipher easily
-    #[inline]
-    pub fn is_some(self) -> bool {
-        self != Cipher::Null
-    }
 }
 
 impl FromStr for Cipher {
@@ -226,9 +184,6 @@ mod internal_impl {
         len + addi
     }
 
-    pub fn aes128cbc_encrypt(src: &[u8], key: &[u8], iv: &[u8]) -> Result<Vec<u8>> {
-        Ok(Aes128Cbc::new_from_slices(key, iv) .map_err(|e|Error::InvalidKeyIvLength)?.encrypt_vec(src))
-    }
     pub fn aes128cbc_decrypt(
         dest: &mut [u8],
         src: &[u8],
@@ -237,14 +192,11 @@ mod internal_impl {
     ) -> Result<usize> {
         clone_buffer(dest, src)?;
         let n = Aes128Cbc::new_from_slices(key, iv)
-            .map_err(|e|Error::InvalidKeyIvLength)?.decrypt(dest)
-            .map_err(|e|Error::InvalidKeyIvLength)?.len();
+            .map_err(|_|Error::InvalidKeyIvLength)?.decrypt(dest)
+            .map_err(|_|Error::InvalidKeyIvLength)?.len();
         Ok(n)
     }
 
-    pub fn aes192cbc_encrypt(src: &[u8], key: &[u8], iv: &[u8]) -> Result<Vec<u8>> {
-        Ok(Aes192Cbc::new_from_slices(key, iv) .map_err(|e|Error::InvalidKeyIvLength)?.encrypt_vec(src))
-    }
     pub fn aes192cbc_decrypt(
         dest: &mut [u8],
         src: &[u8],
@@ -253,16 +205,12 @@ mod internal_impl {
     ) -> Result<usize> {
         clone_buffer(dest, src)?;
         let n = Aes192Cbc::new_from_slices(key, iv)
-            .map_err(|e|Error::InvalidKeyIvLength)?
+            .map_err(|_|Error::InvalidKeyIvLength)?
             .decrypt(dest)
-            .map_err(|e|Error::InvalidKeyIvLength)?.len();
+            .map_err(|_|Error::InvalidKeyIvLength)?.len();
         Ok(n)
     }
 
-    pub fn aes256cbc_encrypt(src: &[u8], key: &[u8], iv: &[u8]) -> Result<Vec<u8>> {
-        Ok(Aes256Cbc::new_from_slices(key, iv)
-            .map_err(|e|Error::InvalidKeyIvLength)?.encrypt_vec(src))
-    }
     pub fn aes256cbc_decrypt(
         dest: &mut [u8],
         src: &[u8],
@@ -271,14 +219,11 @@ mod internal_impl {
     ) -> Result<usize> {
         clone_buffer(dest, src)?;
         let n = Aes256Cbc::new_from_slices(key, iv)
-            .map_err(|e|Error::InvalidKeyIvLength)?.decrypt(dest)
-            .map_err(|e|Error::InvalidKeyIvLength)?.len();
+            .map_err(|_|Error::InvalidKeyIvLength)?.decrypt(dest)
+            .map_err(|_|Error::InvalidKeyIvLength)?.len();
         Ok(n)
     }
 
-    pub fn tdescbc_encrypt(src: &[u8], key: &[u8], iv: &[u8]) -> Result<Vec<u8>> {
-        Ok(TdesCbc::new_from_slices(key, iv).map_err(|e|Error::InvalidKeyIvLength)?.encrypt_vec(src))
-    }
     pub fn tdescbc_decrypt(
         dest: &mut [u8],
         src: &[u8],
@@ -286,15 +231,10 @@ mod internal_impl {
         iv: &[u8],
     ) -> Result<usize> {
         clone_buffer(dest, src)?;
-        let n = TdesCbc::new_from_slices(key, iv).map_err(|e|Error::InvalidKeyIvLength)?.decrypt(dest).map_err(|e|Error::InvalidKeyIvLength)?.len();
+        let n = TdesCbc::new_from_slices(key, iv).map_err(|_|Error::InvalidKeyIvLength)?.decrypt(dest).map_err(|_|Error::InvalidKeyIvLength)?.len();
         Ok(n)
     }
 
-    pub fn aes128ctr_encrypt(src: &[u8], key: &[u8], iv: &[u8]) -> Result<Vec<u8>> {
-        let mut encrypted = Vec::from(src);
-        Aes128Ctr::new_from_slices(key, iv).map_err(|e|Error::InvalidKeyIvLength)?.apply_keystream(&mut encrypted);
-        Ok(encrypted)
-    }
     pub fn aes128ctr_decrypt(
         dest: &mut [u8],
         src: &[u8],
@@ -302,15 +242,10 @@ mod internal_impl {
         iv: &[u8],
     ) -> Result<usize> {
         clone_buffer(dest, src)?;
-        Aes128Ctr::new_from_slices(key, iv).map_err(|e|Error::InvalidKeyIvLength)?.apply_keystream(dest);
+        Aes128Ctr::new_from_slices(key, iv).map_err(|_|Error::InvalidKeyIvLength)?.apply_keystream(dest);
         Ok(src.len())
     }
 
-    pub fn aes192ctr_encrypt(src: &[u8], key: &[u8], iv: &[u8]) -> Result<Vec<u8>> {
-        let mut encrypted = Vec::from(src);
-        Aes192Ctr::new_from_slices(key, iv).map_err(|e|Error::InvalidKeyIvLength)?.apply_keystream(&mut encrypted);
-        Ok(encrypted)
-    }
     pub fn aes192ctr_decrypt(
         dest: &mut [u8],
         src: &[u8],
@@ -318,15 +253,10 @@ mod internal_impl {
         iv: &[u8],
     ) -> Result<usize> {
         clone_buffer(dest, src)?;
-        Aes192Ctr::new_from_slices(key, iv).map_err(|e|Error::InvalidKeyIvLength)?.apply_keystream(dest);
+        Aes192Ctr::new_from_slices(key, iv).map_err(|_|Error::InvalidKeyIvLength)?.apply_keystream(dest);
         Ok(src.len())
     }
 
-    pub fn aes256ctr_encrypt(src: &[u8], key: &[u8], iv: &[u8]) -> Result<Vec<u8>> {
-        let mut encrypted = Vec::from(src);
-        Aes256Ctr::new_from_slices(key, iv).map_err(|e|Error::InvalidKeyIvLength)?.apply_keystream(&mut encrypted);
-        Ok(encrypted)
-    }
     pub fn aes256ctr_decrypt(
         dest: &mut [u8],
         src: &[u8],
@@ -334,7 +264,7 @@ mod internal_impl {
         iv: &[u8],
     ) -> Result<usize> {
         clone_buffer(dest, src)?;
-        Aes256Ctr::new_from_slices(key, iv).map_err(|e|Error::InvalidKeyIvLength)?.apply_keystream(dest);
+        Aes256Ctr::new_from_slices(key, iv).map_err(|_|Error::InvalidKeyIvLength)?.apply_keystream(dest);
         Ok(src.len())
     }
 }

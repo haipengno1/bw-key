@@ -19,49 +19,11 @@ pub struct SshBuf {
 }
 
 impl SshBuf {
-    pub fn new() -> SshBuf {
-        SshBuf {
-            read_pos: 0,
-            buf: CryptoVec::new(),
-        }
-    }
-
     pub fn with_vec(v: CryptoVec) -> SshBuf {
         SshBuf {
             read_pos: 0,
             buf: v,
         }
-    }
-
-    pub fn position(&self) -> usize {
-        self.read_pos
-    }
-
-    pub fn set_position(&mut self, offset: usize) {
-        if offset > self.buf.len() {
-            panic!("Offset exceed length");
-        }
-        self.read_pos = offset;
-    }
-
-    pub fn into_inner(self) -> CryptoVec {
-        self.buf
-    }
-
-    pub fn get_ref(&self) -> &CryptoVec {
-        &self.buf
-    }
-
-    pub fn as_slice(&self) -> &[u8] {
-        &self.buf
-    }
-
-    pub fn len(&self) -> usize {
-        self.buf.len()
-    }
-
-    pub fn is_empty(&self) -> bool {
-        self.buf.is_empty()
     }
 }
 
@@ -121,12 +83,6 @@ pub trait SshReadExt {
     /// Integers which is longer than 16384 bits are also not supporting.
     fn read_mpint(&mut self) ->  io::Result<Vec<u8>>;
 
-    /*
-    /// Read name-list
-    ///
-    /// It is a list representing in an ASCII string separated by the `,` charactor.
-    fn read_list<B: FromIterator<String>>(&mut self) -> io::Result<B>;
-    */
 }
 
 impl<R: io::Read + ?Sized> SshReadExt for R {

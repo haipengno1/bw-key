@@ -1,5 +1,3 @@
-use crate::error;
-
 #[derive(Debug, snafu::Snafu)]
 #[snafu(visibility = "pub")]
 pub enum Error {
@@ -114,6 +112,8 @@ pub enum Error {
     Base64Error,
     #[snafu(display("The argument passed into the function is invalid"))]
     InvalidArgument,
+    #[snafu(display("The key format is not supported"))]
+    UnsupportFormat,
     #[snafu(display("Currently not used..."))]
     InvalidFormat,
     #[snafu(display("Some parts of the key are invalid"))]

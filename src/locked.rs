@@ -42,9 +42,9 @@ impl Vec {
         self.data.extend(it);
     }
 
-    pub fn truncate(&mut self, len: usize) {
-        self.data.truncate(len);
-    }
+    // pub fn truncate(&mut self, len: usize) {
+    //     self.data.truncate(len);
+    // }
 }
 
 impl Drop for Vec {
@@ -97,19 +97,5 @@ impl PasswordHash {
 
     pub fn hash(&self) -> &[u8] {
         self.hash.data()
-    }
-}
-
-pub struct PrivateKey {
-    private_key: Vec,
-}
-
-impl PrivateKey {
-    pub fn new(private_key: Vec) -> Self {
-        Self { private_key }
-    }
-
-    pub fn private_key(&self) -> &[u8] {
-        self.private_key.data()
     }
 }

@@ -1,25 +1,21 @@
-use std::io::{Cursor, Read, Write};
+use std::io::Cursor;
 use std::ops::Deref;
 use std::str::FromStr;
 
 use bcrypt_pbkdf::bcrypt_pbkdf;
-use byteorder::WriteBytesExt;
 use cryptovec::CryptoVec;
-use rand::prelude::*;
-use rand::rngs::StdRng;
+use openssl::bn::BigNumRef;
+use openssl::dsa::Dsa;
+use openssl::pkey::{Id, PKey, Private};
+use openssl::rsa::Rsa;
 use zeroize::Zeroizing;
 
 use crate::cipher::Cipher;
 use crate::error::{Error, Result};
-use crate::PrivateKey::Ed25519;
 use crate::proto::{DssPrivateKey, EcDsaPrivateKey, Ed25519PrivateKey, PrivateKey, RsaPrivateKey};
 use crate::sshbuf::{SshBuf, SshReadExt};
 
 const KEY_MAGIC: &[u8] = b"openssh-key-v1\0";
-const KDF_BCRYPT: &str = "bcrypt";
-const KDF_NONE: &str = "none";
-const DEFAULT_ROUNDS: u32 = 16;
-const SALT_LEN: usize = 16;
 
 pub const RSA_NAME: &str = "ssh-rsa";
 pub const RSA_SHA256_NAME: &str = "rsa-sha2-256";
@@ -30,16 +26,68 @@ pub const NIST_P256_NAME: &str = "ecdsa-sha2-nistp256";
 pub const NIST_P384_NAME: &str = "ecdsa-sha2-nistp384";
 pub const NIST_P521_NAME: &str = "ecdsa-sha2-nistp521";
 
+fn padded_elem(elem: &BigNumRef)->Result<Vec<u8>>{
+    let e=elem.to_vec();
+    let e_len=e.len()+1;
+    elem.to_vec_padded(e_len as i32).map_err(|_|Error::InvalidKey)
+}
+impl TryInto<PrivateKey> for PKey<Private> {
+    type Error = Error;
+
+    fn try_into(self) -> Result<PrivateKey> {
+        match self.id() {
+            Id::RSA => {
+                let rsa_key:Rsa<Private>= Rsa::try_from(self).unwrap();
+                let n = padded_elem(rsa_key.n())?;
+                let e = padded_elem(rsa_key.e())?;
+                let d = padded_elem(rsa_key.d())?;
+                let iqmp = padded_elem(rsa_key.iqmp().unwrap())?;
+                let p = padded_elem(rsa_key.p().unwrap())?;
+                let q = padded_elem(rsa_key.q().unwrap())?;
+                let key = RsaPrivateKey{
+                    n,
+                    e,
+                    d,
+                    iqmp,
+                    p,
+                    q
+                };
+                Ok(PrivateKey::Rsa(key))
+            }
+            Id::DSA => {
+                let dsa_key:Dsa<Private>= Dsa::try_from(self).unwrap();
+                let p = padded_elem(dsa_key.p())?;
+                let q = padded_elem(dsa_key.q())?;
+                let g = padded_elem(dsa_key.g())?;
+                let pubkey = padded_elem(dsa_key.pub_key())?;
+                let privkey =padded_elem(dsa_key.priv_key())?;
+                let key = DssPrivateKey{
+                    p,
+                    q,
+                    g,
+                    y: pubkey,
+                    x: privkey
+                };
+                Ok(PrivateKey::Dss(key))
+            },
+            Id::EC => {
+                Err(Error::UnsupportFormat)
+            },
+            _ =>   Err(Error::InvalidKeyFormat)
+        }
+    }
+}
+
 pub fn parse_keystr(pem: &[u8], passphrase: Option<&str>) -> Result<PrivateKey> {
     // HACK: Fix parsing problem of CRLF in nom_pem
     let s;
     let pemdata = if cfg!(windows) {
         s = std::str::from_utf8(pem)
-            .map_err(|e| Error::InvalidPemFormat)?
+            .map_err(|_| Error::InvalidPemFormat)?
             .replace("\r\n", "\n");
-        nom_pem::decode_block(s.as_bytes()).map_err(|e| Error::InvalidPemFormat)?
+        nom_pem::decode_block(s.as_bytes()).map_err(|_| Error::InvalidPemFormat)?
     } else {
-        nom_pem::decode_block(pem).map_err(|e| Error::InvalidPemFormat)?
+        nom_pem::decode_block(pem).map_err(|_| Error::InvalidPemFormat)?
     };
 
     match pemdata.block_type {
@@ -47,11 +95,26 @@ pub fn parse_keystr(pem: &[u8], passphrase: Option<&str>) -> Result<PrivateKey> 
             // Openssh format
             decode_ossh_priv(&pemdata.data, passphrase)
         }
+        "PRIVATE KEY" |
+        "ENCRYPTED PRIVATE KEY" |//PKCS#8 format
+        "DSA PRIVATE KEY" |//  Openssl DSA Key
+        "EC PRIVATE KEY"  |//  Openssl EC Key
+        "RSA PRIVATE KEY" => {
+            // Openssl RSA Key
+            let pkey:PKey<Private>=match passphrase {
+                Some(passphrase)=>{
+                    PKey::private_key_from_pem_passphrase(pem, passphrase.as_bytes())
+                        .map_err(|_| Error::IncorrectPass)?
+                }
+                _ => {PKey::private_key_from_pem(pem).map_err(|_| Error::InvalidKeyFormat)?}
+            };
+            Ok(pkey.try_into()?)
+        }
         _ => Err(Error::UnsupportType),
     }
 }
 
-pub fn decode_ossh_priv(keydata: &[u8], passphrase: Option<&str>) -> Result<PrivateKey> {
+ fn decode_ossh_priv(keydata: &[u8], passphrase: Option<&str>) -> Result<PrivateKey> {
     if keydata.len() >= 16 && &keydata[0..15] == KEY_MAGIC {
         let mut reader = Cursor::new(keydata);
         reader.set_position(15);
@@ -80,7 +143,7 @@ pub fn decode_ossh_priv(keydata: &[u8], passphrase: Option<&str>) -> Result<Priv
     }
 }
 
-pub fn decrypt_ossh_priv(
+fn decrypt_ossh_priv(
     privkey_data: &[u8],
     passphrase: Option<&str>,
     ciphername: &str,
@@ -115,7 +178,7 @@ pub fn decrypt_ossh_priv(
                     let salt = kdfreader.read_string()?;
                     let round = kdfreader.read_uint32()?;
                     let mut output = Zeroizing::new(vec![0u8; cipher.key_len() + cipher.iv_len()]);
-                    bcrypt_pbkdf(pass, &salt, round, &mut output).map_err(|e| Error::InvalidKey)?;
+                    bcrypt_pbkdf(pass, &salt, round, &mut output).map_err(|_| Error::InvalidKey)?;
                     output
                 } else {
                     // Should have already checked passphrase

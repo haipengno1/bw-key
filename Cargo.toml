@@ -14,6 +14,8 @@ edition = "2021"
 
 [dependencies]
 paw = "1.0.0"
+openssl="0.10.38"
+rsa = "0.5.0"
 rpassword = "5.0"
 structopt = { version = "0.3.25", features = ["paw"] }
 ureq = { version = "*", features = ["json", "charset"] }
@@ -32,7 +34,6 @@ serde_path_to_error = "0.1"
 cryptovec="0.6.1"
 bcrypt-pbkdf="0.7.1"
 ring = "0.16"
-#osshkeys="0.5.2"
 rand = "0.7"
 nom_pem="4.0.0"
 [dependencies.block-modes]

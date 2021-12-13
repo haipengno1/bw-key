@@ -1,12 +1,11 @@
 use std::{env, io};
-use std::convert::TryFrom;
 use std::io::Write;
 use std::os::unix::net::UnixStream;
 use std::path::Path;
 
 use crate::locked::Keys;
 use crate::ossh_privkey::parse_keystr;
-use crate::proto::{Identity, Message, PrivateKey, to_bytes};
+use crate::proto::{Identity, Message,  to_bytes};
 
 mod proto;
 
@@ -86,8 +85,35 @@ fn main(args: Args) -> Result<(), crate::error::Error> {
         // // Write to the client
         let req = Message::AddIdentity(identity);
         let req_bytes = to_bytes(&to_bytes(&req).unwrap()).unwrap();
-        client.write(req_bytes.as_slice());
-        println!("Add ssh key:{}", ssh_key.name);
+        let result=client.write(req_bytes.as_slice());
+        match result {
+            Ok(_)=>{
+                println!("Add ssh key:{}", ssh_key.name)
+            }
+            _ => {
+                println!("Add ssh key:{} failed", ssh_key.name)
+            }
+        }
     }
     Ok(())
+}
+
+#[test]
+fn keyfile_ed25519() {
+    let ssh_key=include_str!("../assets/test_ed25519");
+    let passphrase="123456";
+    let key = parse_keystr(ssh_key.as_bytes(), Some(passphrase)).unwrap();
+
+    let ssh_socket_key = env::var("SSH_AUTH_SOCK").unwrap();
+    let ssh_socket = Path::new(&ssh_socket_key);
+    let mut client = UnixStream::connect(ssh_socket).unwrap();
+    let identity = Identity {
+        private_key: key,
+        comment: "test_ed25519".parse().unwrap(),
+    };
+
+    // // Write to the client
+    let req = Message::AddIdentity(identity);
+    let req_bytes = to_bytes(&to_bytes(&req).unwrap()).unwrap();
+    client.write(req_bytes.as_slice()).unwrap();
 }

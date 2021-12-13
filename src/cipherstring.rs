@@ -84,7 +84,7 @@ impl CipherString {
         let enc_type =s[0];
         match enc_type {
             2 => {
-                if (s.len() <= 49) { // 1 + 16 + 32 + ctLength
+                if s.len() <= 49 { // 1 + 16 + 32 + ctLength
                     return Err(Error::InvalidCipherString {
                         reason: format!(
                             "type 2 cipherstring with {} error length",
