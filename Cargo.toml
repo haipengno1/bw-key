@@ -15,7 +15,6 @@ edition = "2021"
 [dependencies]
 paw = "1.0.0"
 openssl="0.10.38"
-rsa = "0.5.0"
 rpassword = "5.0"
 structopt = { version = "0.3.25", features = ["paw"] }
 ureq = { version = "*", features = ["json", "charset"] }

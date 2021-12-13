@@ -20,11 +20,11 @@ mod cipherstring;
 mod ossh_privkey;
 
 #[derive(structopt::StructOpt)]
-/// I am a program and I work, just pass `-h`
+/// Tool for add keys to ssh-agent from bitwarden server,support self-hosted server, just pass `-h`
 struct Args {
-    #[structopt(short, long, help = "your self-hosted server address")]
+    #[structopt(short, long, help = "The URL of the Bitwarden server to use. Defaults to the official server at `https://xxx.bitwarden.com/` if unset.")]
     host: Option<String>,
-    #[structopt(short, long, help = "your name")]
+    #[structopt(short, long, help = "The email address to use as the account name when logging into the Bitwarden server. Required.")]
     name: Option<String>,
 }
 
