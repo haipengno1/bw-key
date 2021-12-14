@@ -1,11 +1,11 @@
-use std::{env, io};
+use std::{env, io, thread};
 use std::io::Write;
-use std::os::unix::net::UnixStream;
-use std::path::Path;
+use std::time::Duration;
 
 use crate::locked::Keys;
 use crate::ossh_privkey::parse_keystr;
 use crate::proto::{Identity, Message,  to_bytes};
+use crate::sshsock::SshSock;
 
 mod proto;
 
@@ -18,6 +18,7 @@ mod cipher;
 mod sshbuf;
 mod cipherstring;
 mod ossh_privkey;
+mod sshsock;
 
 #[derive(structopt::StructOpt)]
 /// Tool for add keys to ssh-agent from bitwarden server,support self-hosted server, just pass `-h`
@@ -71,10 +72,8 @@ fn main(args: Args) -> Result<(), crate::error::Error> {
     let pkey = crate::locked::Keys::new(master_keys);
     //get ssh keys
     let ssh_keys = client.get_ssh_keys(access_token.as_str(), &pkey).unwrap();
-    let ssh_socket_key = env::var("SSH_AUTH_SOCK").unwrap();
-    // todo windows \.\pipe\openssh-ssh-agent
-    let ssh_socket = Path::new(&ssh_socket_key);
-    let mut client = UnixStream::connect(ssh_socket).unwrap();
+    let ssh_socket_path = env::var("SSH_AUTH_SOCK").map_or(String::new(), |key|key);
+    let mut client = SshSock::new(ssh_socket_path.as_str());
     for ssh_key in ssh_keys {
         let key = parse_keystr(ssh_key.raw_key.as_slice(),  ssh_key.passwd.as_deref()).unwrap();
         let identity = Identity {
@@ -94,6 +93,7 @@ fn main(args: Args) -> Result<(), crate::error::Error> {
                 println!("Add ssh key:{} failed", ssh_key.name)
             }
         }
+        thread::sleep(Duration::from_millis(500));
     }
     Ok(())
 }
@@ -104,9 +104,8 @@ fn keyfile_ed25519() {
     let passphrase="123456";
     let key = parse_keystr(ssh_key.as_bytes(), Some(passphrase)).unwrap();
 
-    let ssh_socket_key = env::var("SSH_AUTH_SOCK").unwrap();
-    let ssh_socket = Path::new(&ssh_socket_key);
-    let mut client = UnixStream::connect(ssh_socket).unwrap();
+    let ssh_socket_path = env::var("SSH_AUTH_SOCK").map_or(String::new(), |key|key);
+    let mut client = SshSock::new(ssh_socket_path.as_str());
     let identity = Identity {
         private_key: key,
         comment: "test_ed25519".parse().unwrap(),
