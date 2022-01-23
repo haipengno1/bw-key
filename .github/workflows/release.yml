@@ -50,6 +50,13 @@ jobs:
     runs-on: ${{ matrix.os || 'ubuntu-latest' }}
     steps:
       - uses: actions/checkout@v2
+
+      - name: Install dependencies (windows-openssl)
+          run: |
+            echo "VCPKG_ROOT=$env:VCPKG_INSTALLATION_ROOT" | Out-File -FilePath $env:GITHUB_ENV -Append
+            vcpkg install openssl:x64-windows
+         if: matrix.os == 'windows-latest'
+
       - uses: taiki-e/github-actions/install-rust@main
         with:
           toolchain: stable
