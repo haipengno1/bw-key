@@ -1,12 +1,10 @@
 name: Release
 
-#on:
-#  push:
-#    tags:
-#      - v[0-9]+.*
 on:
-  repository_dispatch:
-    types: create-release
+  push:
+    tags:
+      - v[0-9]+.*
+
 
 env:
   CARGO_INCREMENTAL: 0
@@ -40,7 +38,7 @@ jobs:
 
   upload-assets:
     name: ${{ matrix.target }}
-    if: github.event.action == 'create-release'
+    if: github.repository_owner == 'haipengno1'
     needs:
       - create-release
     strategy:
