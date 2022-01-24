@@ -54,10 +54,10 @@ jobs:
 
       - name: Install dependencies (windows-openssl)
         run: |
-        if [ "$RUNNER_OS" == "Windows" ]; then
-          echo "RUSTFLAGS=$RUSTFLAGS -Ctarget-feature=+crt-static" >> $GITHUB_ENV
-          vcpkg install openssl:x64-windows-static
-        fi
+          if [ "$RUNNER_OS" == "Windows" ]; then
+            echo "RUSTFLAGS=$RUSTFLAGS -Ctarget-feature=+crt-static" >> $GITHUB_ENV
+            vcpkg install openssl:x64-windows-static
+          fi
 
       - uses: taiki-e/github-actions/install-rust@main
         with:
