@@ -56,7 +56,11 @@ jobs:
         run: |
           if [ "$RUNNER_OS" == "Windows" ]; then
             echo "RUSTFLAGS=$RUSTFLAGS -Ctarget-feature=+crt-static" >> $GITHUB_ENV
+            echo "VCPKG_ROOT=$VCPKG_INSTALLATION_ROOT" >> $GITHUB_ENV
+            echo "RUSTFLAGS=$RUSTFLAGS -Ctarget-feature=+crt-static" >> $GITHUB_ENV
             vcpkg install openssl:x64-windows-static
+          elif [ "$RUNNER_OS" == "Linux" ]; then
+            apt-get install -y libssl-dev
           fi
 
       - uses: taiki-e/github-actions/install-rust@main
