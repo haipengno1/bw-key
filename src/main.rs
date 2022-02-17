@@ -21,12 +21,14 @@ mod ossh_privkey;
 mod sshsock;
 
 #[derive(structopt::StructOpt)]
-/// Tool for add keys to ssh-agent from bitwarden server,support self-hosted server, just pass `-h`
+/// Tool for add keys to ssh-agent from bitwarden server,support self-hosted server, just pass `--help`
 struct Args {
     #[structopt(short, long, help = "The URL of the Bitwarden server to use. Defaults to the official server at `https://xxx.bitwarden.com/` if unset.")]
     host: Option<String>,
     #[structopt(short, long, help = "The email address to use as the account name when logging into the Bitwarden server. Required.")]
     name: Option<String>,
+    #[structopt(short, long, help = "The two factor method to use when logging into the Bitwarden server,can be one of \"auth,email,duo,yubikey,u2f\"")]
+    method: Option<String>,
 }
 
 #[paw::main]
@@ -53,6 +55,38 @@ fn main(args: Args) -> Result<(), crate::error::Error> {
     std::io::stdout().flush()?;
     let passwd_str = rpassword::read_password()?;
 
+    let two_factor_provider = match args.method.clone() {
+        Some(method) => if method.eq_ignore_ascii_case("auth") {
+            Some(crate::api::TwoFactorProviderType::Authenticator)
+        }else if  method.eq_ignore_ascii_case("email"){
+            Some(crate::api::TwoFactorProviderType::Email)
+        }else if  method.eq_ignore_ascii_case("duo"){
+            Some(crate::api::TwoFactorProviderType::Duo)
+        }else if  method.eq_ignore_ascii_case("yubikey"){
+            Some(crate::api::TwoFactorProviderType::Yubikey)
+        }else if  method.eq_ignore_ascii_case("u2f"){
+            Some(crate::api::TwoFactorProviderType::U2f)
+        } else{
+            Option::None
+        },
+        None => {
+            Option::None
+        }
+    };
+    let mut ret;
+    let two_factor_code = match two_factor_provider.clone() {
+        Some(tw) => {
+            print!("Please input  two factor code:");
+            std::io::stdout().flush()?;
+            ret= String::with_capacity(20);
+            io::stdin().read_line(&mut ret).expect("Failed to get code");
+            Some(ret.trim())
+        },
+        None => {
+            Option::None
+        }
+    };
+
     let client = crate::api::Client::new(&base_url, &identity_url);
     let password = crate::locked::Password::new(
         crate::locked::Vec::from_str(passwd_str.as_bytes())
@@ -64,8 +98,8 @@ fn main(args: Args) -> Result<(), crate::error::Error> {
         .login(
             &identity.email,
             &identity.master_password_hash,
-            Option::None,
-            Option::None,
+            two_factor_code,
+            two_factor_provider,
         )?;
     let master_keys = crate::cipherstring::CipherString::new(&protected_key)?
         .decrypt_locked_symmetric(&identity.keys)?;
