@@ -9,10 +9,6 @@ I have been using keepassxc before, and the iPhone does not have an open source 
 When using keepassxc, there is a very good feature, you can store the ssh private keys in it, and automatically load them into ssh-agent when unlocking the client. After switching to bitwarden, there hasn't this feature,   I found an solution at
 [bitwarden-ssh-agent](https://github.com/joaojacome/bitwarden-ssh-agent), but it depends on the official bitwarden-cli, and will generate a temporary file locally, although it will be deleted afterwards, but as Patients with obsessive-compulsive disorder feel uncomfortable, and then here is the new solution.
 
-## History 2021.12.16
-
-- 【v0.0.1】initial version
-
 ## Usage
 
 ### 1. Storing the keys in BitWarden
@@ -30,6 +26,7 @@ FLAGS:
 
 OPTIONS:
 -h, --host <host>    The URL of the Bitwarden server to use. Defaults to the official server at `https://xxx.bitwarden.com/` if unset.
+-m, --method <method>   Optional, The two factor method  to use as the account name when logging into the Bitwarden server,can be one of "auth,email,duo,yubikey,u2f"
 -n, --name <name>    The email address to use as the account name when logging into the Bitwarden server. Required.
 ```
 ## thanks to :

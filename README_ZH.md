@@ -8,10 +8,6 @@
 使用keepassxc的时候，有个非常不错的特性，可以把ssh的私钥存储到里面，解锁的时候自动加载到ssh-agent中，切换到bitwarden后官方没有这个功能，于是先搜索了下有没有轮子，发现了
 [bitwarden-ssh-agent](https://github.com/joaojacome/bitwarden-ssh-agent)，不过这个依赖官方的bitwarden-cli,同时会在本地生成一个临时文件，虽然事后会删除，但是作为强迫症患者感觉不舒服，然后就有了这款轮子。
 
-## 更新日志 2021.12.16
-
-- 【v0.0.1】初始版本
-
 ## 如何使用？
 
 ### 把密钥保存到bitwarden中
@@ -32,6 +28,7 @@ FLAGS:
 
 OPTIONS:
 -h, --host <host>    Bitwarden 服务器地址. 默认使用官方服务器 `https://xxx.bitwarden.com/` .
+-m, --method <method>  可选的，登录系统时使用的二次认证的方法，可以是 "auth,email,duo,yubikey,u2f"其中之一
 -n, --name <name>   登录Bitwarden 服务器用的email地址.
 ```
 
