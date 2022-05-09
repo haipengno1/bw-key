@@ -30,16 +30,6 @@ impl<'de> serde::Deserialize<'de> for TwoFactorProviderType {
                 formatter.write_str("two factor provider id")
             }
 
-            fn visit_str<E>(
-                self,
-                value: &str,
-            ) -> std::result::Result<Self::Value, E>
-                where
-                    E: serde::de::Error,
-            {
-                value.parse().map_err(serde::de::Error::custom)
-            }
-
             fn visit_u64<E>(
                 self,
                 value: u64,
@@ -49,6 +39,16 @@ impl<'de> serde::Deserialize<'de> for TwoFactorProviderType {
             {
                 std::convert::TryFrom::try_from(value)
                     .map_err(serde::de::Error::custom)
+            }
+
+            fn visit_str<E>(
+                self,
+                value: &str,
+            ) -> std::result::Result<Self::Value, E>
+                where
+                    E: serde::de::Error,
+            {
+                value.parse().map_err(serde::de::Error::custom)
             }
         }
 
