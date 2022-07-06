@@ -94,9 +94,7 @@ impl std::str::FromStr for TwoFactorProviderType {
 
 #[derive(serde::Deserialize, Debug)]
 struct PreloginRes {
-    #[serde(rename = "Kdf")]
-    kdf: u32,
-    #[serde(rename = "KdfIterations")]
+    #[serde(rename = "KdfIterations", alias = "kdfIterations")]
     kdf_iterations: u32,
 }
 
@@ -106,7 +104,7 @@ struct ConnectPasswordRes {
     expires_in: u32,
     token_type: String,
     refresh_token: String,
-    #[serde(rename = "Key")]
+    #[serde(rename = "Key", alias = "key")]
     key: String,
 }
 
@@ -114,15 +112,15 @@ struct ConnectPasswordRes {
 struct ConnectErrorRes {
     error: String,
     error_description: String,
-    #[serde(rename = "ErrorModel")]
+    #[serde(rename = "ErrorModel", alias = "errorModel")]
     error_model: Option<ConnectErrorResErrorModel>,
-    #[serde(rename = "TwoFactorProviders")]
+    #[serde(rename = "TwoFactorProviders", alias = "twoFactorProviders")]
     two_factor_providers: Option<Vec<TwoFactorProviderType>>,
 }
 
 #[derive(serde::Deserialize, Debug)]
 struct ConnectErrorResErrorModel {
-    #[serde(rename = "Message")]
+    #[serde(rename = "Message", alias = "message")]
     message: String,
 }
 
@@ -135,153 +133,153 @@ pub struct SSHKeyRecord {
 
 #[derive(serde::Deserialize, Debug)]
  struct SyncRes {
-    #[serde(rename = "Ciphers")]
+    #[serde(rename = "Ciphers", alias = "ciphers")]
      ciphers: Vec<SyncResCipher>,
-    #[serde(rename = "Profile")]
+    #[serde(rename = "Profile", alias = "profile")]
     profile: SyncResProfile,
-    #[serde(rename = "Folders")]
+    #[serde(rename = "Folders", alias = "folders")]
      folders: Vec<SyncResFolder>,
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
  struct SyncResCipher {
-    #[serde(rename = "Id")]
+    #[serde(rename = "Id", alias = "id")]
      id: String,
-    #[serde(rename = "FolderId")]
+    #[serde(rename = "FolderId", alias = "folderId")]
      folder_id: Option<String>,
-    #[serde(rename = "OrganizationId")]
+    #[serde(rename = "OrganizationId", alias = "organizationId")]
      organization_id: Option<String>,
-    #[serde(rename = "Name")]
+    #[serde(rename = "Name", alias = "name")]
      name: String,
-    #[serde(rename = "Login")]
+    #[serde(rename = "Login", alias = "login")]
      login: Option<CipherLogin>,
-    #[serde(rename = "Card")]
+    #[serde(rename = "Card", alias = "card")]
     card: Option<CipherCard>,
-    #[serde(rename = "Identity")]
+    #[serde(rename = "Identity", alias = "identity")]
     identity: Option<CipherIdentity>,
-    #[serde(rename = "SecureNote")]
+    #[serde(rename = "SecureNote", alias = "secureNote")]
     secure_note: Option<CipherSecureNote>,
-    #[serde(rename = "Notes")]
+    #[serde(rename = "Notes", alias = "notes")]
     notes: Option<String>,
-    #[serde(rename = "PasswordHistory")]
+    #[serde(rename = "PasswordHistory", alias = "passwordHistory")]
     password_history: Option<Vec<SyncResPasswordHistory>>,
-    #[serde(rename = "Fields")]
+    #[serde(rename = "Fields", alias = "fields")]
      fields: Option<Vec<SyncResField>>,
-    #[serde(rename = "DeletedDate")]
+    #[serde(rename = "DeletedDate", alias = "deletedDate")]
     deleted_date: Option<String>,
-    #[serde(rename = "Attachments")]
+    #[serde(rename = "Attachments", alias = "attachments")]
      attachments: Option<Vec<SyncResAttach>>,
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
  struct SyncResAttach {
-    #[serde(rename = "Id")]
+    #[serde(rename = "Id", alias = "id")]
     id: String,
-    #[serde(rename = "Key")]
+    #[serde(rename = "Key", alias = "key")]
     pub key: String,
-    #[serde(rename = "Size")]
+    #[serde(rename = "Size", alias = "size")]
     size: String,
-    #[serde(rename = "FileName")]
+    #[serde(rename = "FileName", alias = "fileName")]
      file_name: String,
-    #[serde(rename = "Url")]
+    #[serde(rename = "Url", alias = "url")]
      url: String,
 }
 
 #[derive(serde::Deserialize, Debug)]
 struct SyncResProfile {
-    #[serde(rename = "Key")]
+    #[serde(rename = "Key", alias = "key")]
     key: String,
-    #[serde(rename = "PrivateKey")]
+    #[serde(rename = "PrivateKey", alias = "privateKey")]
     private_key: String,
-    #[serde(rename = "Organizations")]
+    #[serde(rename = "Organizations", alias = "organizations")]
     organizations: Vec<SyncResProfileOrganization>,
 }
 
 #[derive(serde::Deserialize, Debug)]
 struct SyncResProfileOrganization {
-    #[serde(rename = "Id")]
+    #[serde(rename = "Id", alias = "id")]
     id: String,
-    #[serde(rename = "Key")]
+    #[serde(rename = "Key", alias = "key")]
     key: String,
 }
 
 #[derive(serde::Deserialize, Debug, Clone)]
  struct SyncResFolder {
-    #[serde(rename = "Id")]
+    #[serde(rename = "Id", alias = "id")]
      id: String,
-    #[serde(rename = "Name")]
+    #[serde(rename = "Name", alias = "name")]
      name: String,
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
  struct CipherLogin {
-    #[serde(rename = "Username")]
+    #[serde(rename = "Username", alias = "username")]
     username: Option<String>,
-    #[serde(rename = "Password")]
+    #[serde(rename = "Password", alias = "password")]
      password: Option<String>,
-    #[serde(rename = "Totp")]
+    #[serde(rename = "Totp", alias = "totp")]
     totp: Option<String>,
-    #[serde(rename = "Uris")]
+    #[serde(rename = "Uris", alias = "uris")]
     uris: Option<Vec<CipherLoginUri>>,
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
 struct CipherLoginUri {
-    #[serde(rename = "Uri")]
+    #[serde(rename = "Uri", alias = "uri")]
     uri: Option<String>,
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
 struct CipherCard {
-    #[serde(rename = "CardholderName")]
+    #[serde(rename = "CardholderName", alias = "cardHolderName")]
     cardholder_name: Option<String>,
-    #[serde(rename = "Number")]
+    #[serde(rename = "Number", alias = "number")]
     number: Option<String>,
-    #[serde(rename = "Brand")]
+    #[serde(rename = "Brand", alias = "brand")]
     brand: Option<String>,
-    #[serde(rename = "ExpMonth")]
+    #[serde(rename = "ExpMonth", alias = "expMonth")]
     exp_month: Option<String>,
-    #[serde(rename = "ExpYear")]
+    #[serde(rename = "ExpYear", alias = "expYear")]
     exp_year: Option<String>,
-    #[serde(rename = "Code")]
+    #[serde(rename = "Code", alias = "code")]
     code: Option<String>,
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
 struct CipherIdentity {
-    #[serde(rename = "Title")]
+    #[serde(rename = "Title", alias = "title")]
     title: Option<String>,
-    #[serde(rename = "FirstName")]
+    #[serde(rename = "FirstName", alias = "firstName")]
     first_name: Option<String>,
-    #[serde(rename = "MiddleName")]
+    #[serde(rename = "MiddleName", alias = "middleName")]
     middle_name: Option<String>,
-    #[serde(rename = "LastName")]
+    #[serde(rename = "LastName", alias = "lastName")]
     last_name: Option<String>,
-    #[serde(rename = "Address1")]
+    #[serde(rename = "Address1", alias = "address1")]
     address1: Option<String>,
-    #[serde(rename = "Address2")]
+    #[serde(rename = "Address2", alias = "address2")]
     address2: Option<String>,
-    #[serde(rename = "Address3")]
+    #[serde(rename = "Address3", alias = "address3")]
     address3: Option<String>,
-    #[serde(rename = "City")]
+    #[serde(rename = "City", alias = "city")]
     city: Option<String>,
-    #[serde(rename = "State")]
+    #[serde(rename = "State", alias = "state")]
     state: Option<String>,
-    #[serde(rename = "PostalCode")]
+    #[serde(rename = "PostalCode", alias = "postalCode")]
     postal_code: Option<String>,
-    #[serde(rename = "Country")]
+    #[serde(rename = "Country", alias = "country")]
     country: Option<String>,
-    #[serde(rename = "Phone")]
+    #[serde(rename = "Phone", alias = "phone")]
     phone: Option<String>,
-    #[serde(rename = "Email")]
+    #[serde(rename = "Email", alias = "email")]
     email: Option<String>,
-    #[serde(rename = "SSN")]
+    #[serde(rename = "SSN", alias = "ssn")]
     ssn: Option<String>,
-    #[serde(rename = "LicenseNumber")]
+    #[serde(rename = "LicenseNumber", alias = "licenseNumber")]
     license_number: Option<String>,
-    #[serde(rename = "PassportNumber")]
+    #[serde(rename = "PassportNumber", alias = "passportNumber")]
     passport_number: Option<String>,
-    #[serde(rename = "Username")]
+    #[serde(rename = "Username", alias = "username")]
     username: Option<String>,
 }
 
@@ -292,20 +290,20 @@ struct CipherSecureNote {}
 
 #[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
 struct SyncResPasswordHistory {
-    #[serde(rename = "LastUsedDate")]
+    #[serde(rename = "LastUsedDate", alias = "lastUsedDate")]
     last_used_date: String,
-    #[serde(rename = "Password")]
-    password: String,
+    #[serde(rename = "Password", alias = "password")]
+    password: Option<String>,
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
  struct SyncResField {
-    #[serde(rename = "Type")]
-     ty: u32,
-    #[serde(rename = "Name")]
-     name: String,
-    #[serde(rename = "Value")]
-     value: String,
+    #[serde(rename = "Type", alias = "type")]
+    ty: u32,
+    #[serde(rename = "Name", alias = "name")]
+    name: Option<String>,
+    #[serde(rename = "Value", alias = "value")]
+    value: Option<String>,
 }
 
 
@@ -332,6 +330,7 @@ impl Client {
         match resp {
                 Ok(resp) => {
                     let prelogin_res: PreloginRes = resp.into_json().context(crate::error::Ureq)?;
+                    println!("{:?}",prelogin_res);
                     Ok(prelogin_res.kdf_iterations)
                 }
                 Err(ureq::Error::Status(code, _response)) => {
@@ -357,26 +356,29 @@ impl Client {
         req.push(  ("password",pass.borrow()));
         req.push(   ("scope","api offline_access"));
         req.push(   ("client_id","desktop"));
-        req.push(    ("device_type","8"));
+        req.push(    ("deviceType","8"));
         let uuid=uuid::Uuid::new_v4().to_hyphenated().to_string();
-        req.push(    ("device_identifier",uuid.borrow()));
-        req.push(    ("device_name", "bw-key"));
-        req.push(    ("device_push_token",""));
+        req.push(    ("deviceIdentifier",uuid.borrow()));
+        req.push(    ("deviceName", "bw-key"));
+        req.push(    ("devicePushToken",""));
         let mut tws=String::new();
         two_factor_provider.map(|tw|{
             tws=(tw as u32).to_string();
-            req.push(("two_factor_provider",tws.as_str()));
+            req.push(("twoFactorProvider",tws.as_str()));
         });
         two_factor_token.map(|tt|{
-            req.push(("two_factor_token",tt));
+            req.push(("twoFactorToken",tt));
         });
         let resp = ureq::post(&self.identity_url("/connect/token"))
             .set("Accept", "application/json")
+            .set("auth-email",
+                 base64::encode_config(email, base64::URL_SAFE_NO_PAD).as_str())
             .send_form(
                 req.as_slice()
             );
         match resp {
             Ok(resp) => {
+                println!("{:?}",resp);
                 let connect_res: ConnectPasswordRes =
                     resp.into_json().context(crate::error::Ureq)?;
                 Ok((
@@ -386,6 +388,7 @@ impl Client {
                 ))
             }
             Err(ureq::Error::Status(code, res)) => {
+                println!("{:?}:{:?}",code,res);
                 Err(classify_login_error(&res.into_json().context(crate::error::Ureq)?, code))
             }
             Err(_) => {
@@ -461,8 +464,9 @@ impl Client {
                                     let mut auto_load=true;
                                     cipher.fields.as_ref().map(|fields|{
                                         for field in fields{
-                                            let field_name =self.decrypt(&field.name, pkey);
-                                            let field_value =self.decrypt(&field.value, pkey);
+                                            let field=field.clone();
+                                            let field_name =self.decrypt(&field.name.unwrap(), pkey);
+                                            let field_value =self.decrypt(&field.value.unwrap(), pkey);
                                             if field.ty==2 {
                                                 if field_name.eq_ignore_ascii_case("autoload") {
                                                     if field_value.eq_ignore_ascii_case("false") {
