@@ -75,7 +75,7 @@ fn main(args: Args) -> Result<(), crate::error::Error> {
     };
     let mut ret;
     let two_factor_code = match two_factor_provider.clone() {
-        Some(tw) => {
+        Some(_tw) => {
             print!("Please input  two factor code:");
             std::io::stdout().flush()?;
             ret= String::with_capacity(20);

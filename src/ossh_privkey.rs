@@ -99,6 +99,7 @@ pub fn parse_keystr(pem: &[u8], passphrase: Option<&str>) -> Result<PrivateKey> 
         "ENCRYPTED PRIVATE KEY" |//PKCS#8 format
         "DSA PRIVATE KEY" |//  Openssl DSA Key
         "EC PRIVATE KEY"  |//  Openssl EC Key
+        "BEGIN PRIVATE KEY"  |//  Openssl Ed25519 Key
         "RSA PRIVATE KEY" => {
             // Openssl RSA Key
             let pkey:PKey<Private>=match passphrase {

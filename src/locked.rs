@@ -1,13 +1,13 @@
 use zeroize::Zeroize;
 
 pub struct Vec {
-    data: Box<arrayvec::ArrayVec<[u8;4096]>>,
+    data: Box<arrayvec::ArrayVec<u8,4096>>,
     _lock: region::LockGuard,
 }
 
 impl Default for Vec {
     fn default() -> Self {
-        let data = Box::new(arrayvec::ArrayVec::<_>::new());
+        let data = Box::new(arrayvec::ArrayVec::<_,4096>::new());
         // XXX it'd be nice to handle this better than .unwrap(), but it'd be
         // a lot of effort
         let lock = region::lock(data.as_ptr(), data.capacity()).unwrap();
@@ -20,7 +20,7 @@ impl Vec {
         Self::default()
     }
     pub fn from_str(str:&[u8]) -> Self {
-        let mut array = arrayvec::ArrayVec::<[u8; 4096]>::new();
+        let mut array = arrayvec::ArrayVec::<u8, 4096>::new();
         array.extend(std::iter::repeat(0).take(str.len()));
         array.copy_from_slice(str);
         array.truncate(str.len());

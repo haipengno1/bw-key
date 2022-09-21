@@ -22,7 +22,7 @@ byteorder = "1.4"
 serde = {version = "1.0", features = ["derive"]}
 log = "0.4"
 bytes = { version = "1.1", optional = true }
-snafu = "0.7"
+snafu = "0.6"
 uuid = { version = "0.8", features = ["v4"] }
 zeroize = "1.4"
 base64 = "0.13"
