@@ -22,9 +22,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - uses: taiki-e/github-actions/install-rust@main
-        with:
-          toolchain: stable
+      - name: Install Rust
+        run: rustup update stable
       - run: cargo package
       - uses: taiki-e/create-gh-release-action@v1
         with:
@@ -65,9 +64,8 @@ jobs:
             sudo apt-get install -y libssl-dev
           fi
 
-      - uses: taiki-e/github-actions/install-rust@main
-        with:
-          toolchain: stable
+      - name: Install Rust
+        run: rustup update stable
       - uses: taiki-e/upload-rust-binary-action@v1
         with:
           bin: bw-key
