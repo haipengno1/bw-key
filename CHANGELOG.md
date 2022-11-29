@@ -10,6 +10,11 @@ Note: In this file, do not use the hard wrap in the middle of a sentence for com
 
 ## [Unreleased]
 
+## [0.1.0] - 2022-11-29
+
+add Mac ARM support
+add Linux ARM support
+
 ## [0.0.2] - 2022-02-17
 
 add two factor auth support
