@@ -22,9 +22,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - name: Install Rust
-        run: rustup update stable
-      - run: cargo package
       - uses: taiki-e/create-gh-release-action@v1
         with:
           changelog: CHANGELOG.md
@@ -43,7 +40,7 @@ jobs:
         include:
           - target: x86_64-unknown-linux-gnu
           - target: aarch64-unknown-linux-gnu
-          - target: arm_64-apple-darwin
+          - target: aarch64-apple-darwin
             os: macos-latest
           - target: x86_64-apple-darwin
             os: macos-latest
@@ -59,6 +56,7 @@ jobs:
             echo "RUSTFLAGS=$RUSTFLAGS -Ctarget-feature=+crt-static" >> $GITHUB_ENV
             echo "VCPKG_ROOT=$VCPKG_INSTALLATION_ROOT" >> $GITHUB_ENV
             echo "RUSTFLAGS=$RUSTFLAGS -Ctarget-feature=+crt-static" >> $GITHUB_ENV
+            vcpkg update
             vcpkg install openssl:x64-windows-static
           elif [ "$RUNNER_OS" == "Linux" ]; then
             sudo apt-get install -y libssl-dev
