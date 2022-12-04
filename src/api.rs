@@ -1,5 +1,6 @@
 use std::borrow::Borrow;
 use std::io::Read;
+use log::debug;
 use crate::{cipherstring, Keys};
 use crate::prelude::*;
 
@@ -330,7 +331,7 @@ impl Client {
         match resp {
                 Ok(resp) => {
                     let prelogin_res: PreloginRes = resp.into_json().context(crate::error::Ureq)?;
-                    println!("{:?}",prelogin_res);
+                    debug!("{:?}",prelogin_res);
                     Ok(prelogin_res.kdf_iterations)
                 }
                 Err(ureq::Error::Status(code, _response)) => {
@@ -378,7 +379,7 @@ impl Client {
             );
         match resp {
             Ok(resp) => {
-                println!("{:?}",resp);
+                debug!("{:?}",resp);
                 let connect_res: ConnectPasswordRes =
                     resp.into_json().context(crate::error::Ureq)?;
                 Ok((
@@ -388,8 +389,8 @@ impl Client {
                 ))
             }
             Err(ureq::Error::Status(code, res)) => {
-                println!("{:?}:{:?}",code,res);
                 Err(classify_login_error(&res.into_json().context(crate::error::Ureq)?, code))
+                debug!("{:?}:{:?}",code,res);
             }
             Err(_) => {
                 Err(Error::UreqErr)
