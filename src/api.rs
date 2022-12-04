@@ -389,8 +389,8 @@ impl Client {
                 ))
             }
             Err(ureq::Error::Status(code, res)) => {
-                Err(classify_login_error(&res.into_json().context(crate::error::Ureq)?, code))
                 debug!("{:?}:{:?}",code,res);
+                Err(classify_login_error(&res.into_json().context(crate::error::Ureq)?, code))
             }
             Err(_) => {
                 Err(Error::UreqErr)
