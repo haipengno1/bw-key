@@ -68,7 +68,7 @@ jobs:
         with:
           bin: bw-key
           target: ${{ matrix.target }}
-          tar: all
+          tar: unix
           zip: windows
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -1,8 +1,10 @@
-use std::io::Write;
+use std::env;
+use std::io::{Error, Write};
 #[cfg(not(target_os = "windows"))]
 use std::os::unix::net::UnixStream;
 #[cfg(not(target_os = "windows"))]
 use std::path::Path;
+
 #[cfg(target_os = "windows")]
 use named_pipe::PipeClient;
 
@@ -15,24 +17,39 @@ pub struct SshSock {
 }
 
 impl SshSock {
-    pub fn new(path: &str) -> Self {
+    pub fn new() -> Result<Self, Error> {
         #[cfg(not(target_os = "windows"))]
             {
-                let ssh_socket = Path::new(&path);
-                let unix_client = UnixStream::connect(ssh_socket).unwrap();
-                Self {
-                    unix_client
+                let mut ssh_path=&env::var("SSH_AUTH_SOCK").map_or(String::new(), |key|key);
+
+                let ssh_socket = Path::new(ssh_path);
+                let unix_client = UnixStream::connect(ssh_socket);
+                match unix_client {
+                    Ok(unix_client) => {
+                        Ok(Self {
+                            unix_client
+                        })
+                    }
+                    Err(e) => {
+                        print!("Error connecting to $SSH_AUTH_SOCK, did you start ssh-agent?");
+                        Err(e)
+                    }
                 }
             }
         #[cfg(target_os = "windows")]
             {
-                let mut ssh_path=path;
-                if ssh_path=="" {
-                    ssh_path=r"\\.\pipe\openssh-ssh-agent";
-                }
-                let pipe_client=PipeClient::connect(ssh_path).unwrap();
-                Self {
-                    pipe_client
+                let mut ssh_path=r"\\.\pipe\openssh-ssh-agent";
+                let pipe_client=PipeClient::connect(ssh_path);
+                match pipe_client {
+                    Ok(pipe_client) => {
+                        Ok(Self {
+                            pipe_client
+                        })
+                    }
+                    Err(e) => {
+                        print!("Error connecting to \\\\.\\pipe\\openssh-ssh-agent, did you start ssh-agent?");
+                        Err(e)
+                    }
                 }
             }
     }

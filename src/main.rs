@@ -1,10 +1,12 @@
-use std::{env, io, thread};
+use std::{io, thread};
 use std::io::Write;
 use std::time::Duration;
 
+use log::{debug, Level, LevelFilter, Metadata, Record};
+
 use crate::locked::Keys;
 use crate::ossh_privkey::parse_keystr;
-use crate::proto::{Identity, Message,  to_bytes};
+use crate::proto::{Identity, Message, to_bytes};
 use crate::sshsock::SshSock;
 
 mod proto;
@@ -30,13 +32,12 @@ struct Args {
     #[structopt(short, long, help = "The two factor method to use when logging into the Bitwarden server,can be one of \"auth,email,duo,yubikey,u2f\"")]
     method: Option<String>,
 }
-use log::{Record, Level, Metadata, debug, LevelFilter};
 
 struct SimpleLogger;
 
 impl log::Log for SimpleLogger {
     fn enabled(&self, metadata: &Metadata) -> bool {
-        true
+        metadata.level() <= Level::Debug
     }
 
     fn log(&self, record: &Record) {
@@ -50,7 +51,8 @@ impl log::Log for SimpleLogger {
 #[paw::main]
 fn main(args: Args) -> Result<(), crate::error::Error> {
     log::set_boxed_logger(Box::new(SimpleLogger))
-        .map(|()| log::set_max_level(LevelFilter::Debug)).expect("log init failed");
+        .map(|()| log::set_max_level(LevelFilter::Info)).expect("log init failed");
+    let mut ssh_client = SshSock::new()?;
     let base_url = args.host.clone().map_or(
         "https://api.bitwarden.com".to_string(),
         |url| format!("{}/api", url),
@@ -76,15 +78,15 @@ fn main(args: Args) -> Result<(), crate::error::Error> {
     let two_factor_provider = match args.method.clone() {
         Some(method) => if method.eq_ignore_ascii_case("auth") {
             Some(crate::api::TwoFactorProviderType::Authenticator)
-        }else if  method.eq_ignore_ascii_case("email"){
+        } else if method.eq_ignore_ascii_case("email") {
             Some(crate::api::TwoFactorProviderType::Email)
-        }else if  method.eq_ignore_ascii_case("duo"){
+        } else if method.eq_ignore_ascii_case("duo") {
             Some(crate::api::TwoFactorProviderType::Duo)
-        }else if  method.eq_ignore_ascii_case("yubikey"){
+        } else if method.eq_ignore_ascii_case("yubikey") {
             Some(crate::api::TwoFactorProviderType::Yubikey)
-        }else if  method.eq_ignore_ascii_case("u2f"){
+        } else if method.eq_ignore_ascii_case("u2f") {
             Some(crate::api::TwoFactorProviderType::U2f)
-        } else{
+        } else {
             Option::None
         },
         None => {
@@ -96,10 +98,10 @@ fn main(args: Args) -> Result<(), crate::error::Error> {
         Some(_tw) => {
             print!("Please input  two factor code:");
             std::io::stdout().flush()?;
-            ret= String::with_capacity(20);
+            ret = String::with_capacity(20);
             io::stdin().read_line(&mut ret).expect("Failed to get code");
             Some(ret.trim())
-        },
+        }
         None => {
             Option::None
         }
@@ -124,10 +126,8 @@ fn main(args: Args) -> Result<(), crate::error::Error> {
     let pkey = crate::locked::Keys::new(master_keys);
     //get ssh keys
     let ssh_keys = client.get_ssh_keys(access_token.as_str(), &pkey).unwrap();
-    let ssh_socket_path = env::var("SSH_AUTH_SOCK").map_or(String::new(), |key|key);
-    let mut client = SshSock::new(ssh_socket_path.as_str());
     for ssh_key in ssh_keys {
-        let key = parse_keystr(ssh_key.raw_key.as_slice(),  ssh_key.passwd.as_deref()).unwrap();
+        let key = parse_keystr(ssh_key.raw_key.as_slice(), ssh_key.passwd.as_deref()).unwrap();
         let identity = Identity {
             private_key: key,
             comment: ssh_key.name.clone(),
@@ -136,9 +136,9 @@ fn main(args: Args) -> Result<(), crate::error::Error> {
         // // Write to the client
         let req = Message::AddIdentity(identity);
         let req_bytes = to_bytes(&to_bytes(&req).unwrap()).unwrap();
-        let result=client.write(req_bytes.as_slice());
+        let result = ssh_client.write(req_bytes.as_slice());
         match result {
-            Ok(_)=>{
+            Ok(_) => {
                 println!("Add ssh key:{}", ssh_key.name)
             }
             _ => {
@@ -152,12 +152,12 @@ fn main(args: Args) -> Result<(), crate::error::Error> {
 
 #[test]
 fn keyfile_ed25519() {
-    let ssh_key=include_str!("../assets/test_ed25519");
-    let passphrase="123456";
+    let ssh_key = include_str!("../assets/test_ed25519");
+    let passphrase = "123456";
     let key = parse_keystr(ssh_key.as_bytes(), Some(passphrase)).unwrap();
 
-    let ssh_socket_path = env::var("SSH_AUTH_SOCK").map_or(String::new(), |key|key);
-    let mut client = SshSock::new(ssh_socket_path.as_str());
+    let ssh_socket_path = env::var("SSH_AUTH_SOCK").map_or(String::new(), |key| key);
+    let mut client = SshSock::new().unwrap();
     let identity = Identity {
         private_key: key,
         comment: "test_ed25519".parse().unwrap(),
