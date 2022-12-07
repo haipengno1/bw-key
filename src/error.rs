@@ -1,5 +1,5 @@
 #[derive(Debug, snafu::Snafu)]
-#[snafu(visibility = "pub")]
+#[snafu(visibility(pub(crate)))]
 pub enum Error {
     #[snafu(display("email address not set"))]
     ConfigMissingEmail,

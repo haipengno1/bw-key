@@ -1,7 +1,7 @@
 [package]
 name = "bw-key"
 description = "Tool for add keys to ssh-agent from bitwarden server"
-version = "0.1.0"
+version = "0.1.1"
 license = "Apache"
 authors = [
     "berton wang <haipengno1@gmail.com>"
@@ -19,9 +19,9 @@ structopt = { version = "0.3", features = ["paw"] }
 ureq = { version = "*", features = ["json", "charset"] }
 byteorder = "1.4"
 serde = {version = "1.0", features = ["derive"]}
-log = "0.4"
+log = { version = "0.4", features = [ "std","max_level_debug", "release_max_level_warn"] }
 bytes = { version = "1.1", optional = true }
-snafu = "0.6"
+snafu = "0.7.0"
 uuid = { version = "0.8", features = ["v4"] }
 zeroize = "1.4"
 base64 = "0.13"

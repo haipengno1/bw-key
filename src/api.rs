@@ -330,7 +330,7 @@ impl Client {
              }));
         match resp {
                 Ok(resp) => {
-                    let prelogin_res: PreloginRes = resp.into_json().context(crate::error::Ureq)?;
+                    let prelogin_res: PreloginRes = resp.into_json().context(crate::error::UreqSnafu)?;
                     debug!("{:?}",prelogin_res);
                     Ok(prelogin_res.kdf_iterations)
                 }
@@ -381,7 +381,7 @@ impl Client {
             Ok(resp) => {
                 debug!("{:?}",resp);
                 let connect_res: ConnectPasswordRes =
-                    resp.into_json().context(crate::error::Ureq)?;
+                    resp.into_json().context(crate::error::UreqSnafu)?;
                 Ok((
                     connect_res.access_token,
                     connect_res.refresh_token,
@@ -390,7 +390,7 @@ impl Client {
             }
             Err(ureq::Error::Status(code, res)) => {
                 debug!("{:?}:{:?}",code,res);
-                Err(classify_login_error(&res.into_json().context(crate::error::Ureq)?, code))
+                Err(classify_login_error(&res.into_json().context(crate::error::UreqSnafu)?, code))
             }
             Err(_) => {
                 Err(Error::UreqErr)
@@ -436,7 +436,7 @@ impl Client {
             .call();
         match res {
             Ok(resp) => {
-                let sync_res: SyncRes = resp.into_json().context(crate::error::Ureq)?;
+                let sync_res: SyncRes = resp.into_json().context(crate::error::UreqSnafu)?;
                 //find ssh folder
                 let mut ssh_folder_id:&String= &String::new();
                 for folder in &sync_res.folders {

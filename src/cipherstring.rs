@@ -47,13 +47,13 @@ impl CipherString {
                 }
 
                 let iv = base64::decode(parts[0])
-                    .context(crate::error::InvalidBase64)?;
+                    .context(crate::error::InvalidBase64Snafu)?;
                 let ciphertext = base64::decode(parts[1])
-                    .context(crate::error::InvalidBase64)?;
+                    .context(crate::error::InvalidBase64Snafu)?;
                 let mac = if parts.len() > 2 {
                     Some(
                         base64::decode(parts[2])
-                            .context(crate::error::InvalidBase64)?,
+                            .context(crate::error::InvalidBase64Snafu)?,
                     )
                 } else {
                     None
@@ -72,7 +72,7 @@ impl CipherString {
                 // format is: <cipher_text_b64>|<hmac_sig>
                 let contents = contents.split('|').next().unwrap();
                 let ciphertext = base64::decode(contents)
-                    .context(crate::error::InvalidBase64)?;
+                    .context(crate::error::InvalidBase64Snafu)?;
                 Ok(Self::Asymmetric { ciphertext })
             }
             _ => Err(Error::UnimplementedCipherStringType {
@@ -126,7 +126,7 @@ impl CipherString {
                 )?;
                 cipher
                     .decrypt_vec(ciphertext)
-                    .context(crate::error::Decrypt)
+                    .context(crate::error::DecryptSnafu)
             }
             _ => Err(Error::InvalidCipherString {
                 reason:
@@ -156,7 +156,7 @@ impl CipherString {
                 )?;
                 cipher
                     .decrypt(res.data_mut())
-                    .context(crate::error::Decrypt)?;
+                    .context(crate::error::DecryptSnafu)?;
                 Ok(res)
             }
             _ => Err(Error::InvalidCipherString {
@@ -195,7 +195,7 @@ fn decrypt_common_symmetric(
             aes::Aes256,
             block_modes::block_padding::Pkcs7,
         >::new_from_slices(keys.enc_key(), iv)
-        .context(crate::error::CreateBlockMode)?)
+        .context(crate::error::CreateBlockModeSnafu)?)
 }
 
 impl std::fmt::Display for CipherString {
