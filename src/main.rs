@@ -30,9 +30,27 @@ struct Args {
     #[structopt(short, long, help = "The two factor method to use when logging into the Bitwarden server,can be one of \"auth,email,duo,yubikey,u2f\"")]
     method: Option<String>,
 }
+use log::{Record, Level, Metadata, debug, LevelFilter};
 
+struct SimpleLogger;
+
+impl log::Log for SimpleLogger {
+    fn enabled(&self, metadata: &Metadata) -> bool {
+        true
+    }
+
+    fn log(&self, record: &Record) {
+        if self.enabled(record.metadata()) {
+            println!("{} - {}", record.level(), record.args());
+        }
+    }
+
+    fn flush(&self) {}
+}
 #[paw::main]
 fn main(args: Args) -> Result<(), crate::error::Error> {
+    log::set_boxed_logger(Box::new(SimpleLogger))
+        .map(|()| log::set_max_level(LevelFilter::Debug)).expect("log init failed");
     let base_url = args.host.clone().map_or(
         "https://api.bitwarden.com".to_string(),
         |url| format!("{}/api", url),
