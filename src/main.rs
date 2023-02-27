@@ -2,7 +2,7 @@ use std::{io, thread};
 use std::io::Write;
 use std::time::Duration;
 
-use log::{debug, Level, LevelFilter, Metadata, Record};
+use log::{Level, LevelFilter, Metadata, Record};
 
 use crate::locked::Keys;
 use crate::ossh_privkey::parse_keystr;
