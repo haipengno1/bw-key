@@ -10,13 +10,11 @@ repository = "https://github.com/haipengno1/bw-key"
 readme = "README.md"
 edition = "2021"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [dependencies]
 paw = "1.0.0"
 rpassword = "5.0"
 structopt = { version = "0.3", features = ["paw"] }
-ureq = { version = "*", features = ["json", "charset"] }
+ureq = { version = "2.4.0", features = ["json", "charset"] }
 byteorder = "1.4"
 serde = {version = "1.0", features = ["derive"]}
 log = { version = "0.4", features = [ "std","max_level_debug", "release_max_level_warn"] }
