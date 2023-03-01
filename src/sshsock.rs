@@ -20,7 +20,7 @@ impl SshSock {
     pub fn new() -> Result<Self, Error> {
         #[cfg(not(target_os = "windows"))]
             {
-                let mut ssh_path=&env::var("SSH_AUTH_SOCK").map_or(String::new(), |key|key);
+                let ssh_path=&env::var("SSH_AUTH_SOCK").map_or(String::new(), |key|key);
 
                 let ssh_socket = Path::new(ssh_path);
                 let unix_client = UnixStream::connect(ssh_socket);
