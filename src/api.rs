@@ -102,7 +102,7 @@ struct PreloginRes {
 #[derive(serde::Deserialize, Debug)]
 struct ConnectPasswordRes {
     access_token: String,
-    expires_in: u32,
+    _expires_in: u32,
     token_type: String,
     refresh_token: String,
     #[serde(rename = "Key", alias = "key")]
