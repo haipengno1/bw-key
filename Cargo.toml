@@ -40,7 +40,7 @@ version = "0.7"
 features = ["ctr"]
 optional = true
 [target.'cfg(target_arch = "x86_64")'.dependencies]
-openssl = { version = "0.10"}
+openssl = { version = "0.10", features = ["vendored"]}
 [target.'cfg(target_arch = "aarch64")'.dependencies]
 openssl = { version = "0.10", features = ["vendored"] }
 [dependencies.des]
