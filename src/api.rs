@@ -359,7 +359,7 @@ impl Client {
         req.push(   ("scope","api offline_access"));
         req.push(   ("client_id","desktop"));
         req.push(    ("deviceType","8"));
-        let uuid=uuid::Uuid::new_v4().to_hyphenated().to_string();
+        let uuid=uuid::Uuid::new_v4().hyphenated().to_string();
         req.push(    ("deviceIdentifier",uuid.borrow()));
         req.push(    ("deviceName", "bw-key"));
         req.push(    ("devicePushToken",""));

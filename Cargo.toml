@@ -20,7 +20,7 @@ serde = {version = "1.0", features = ["derive"]}
 log = { version = "0.4", features = [ "std","max_level_debug", "release_max_level_warn"] }
 bytes = { version = "1.1", optional = true }
 snafu = "0.7.0"
-uuid = { version = "0.8", features = ["v4"] }
+uuid = { version = "1.6.1", features = ["v4","fast-rng"] }
 zeroize = "1.4"
 base64 = "0.13"
 region = "3.0"
