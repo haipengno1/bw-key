@@ -9,6 +9,9 @@ Note: In this file, do not use the hard wrap in the middle of a sentence for com
 -->
 
 ## [Unreleased]
+## [0.1.2] - 2024-04-20
+fixed:
+New version compatibility
 
 ## [0.1.1] - 2022-12-07
 
