@@ -12,26 +12,27 @@ edition = "2021"
 
 [dependencies]
 paw = "1.0.0"
-rpassword = "5.0"
-structopt = { version = "0.3", features = ["paw"] }
-ureq = { version = "2.4.0", features = ["json", "charset"] }
-byteorder = "1.4"
-serde = {version = "1.0", features = ["derive"]}
-log = { version = "0.4", features = [ "std","max_level_debug", "release_max_level_warn"] }
-bytes = { version = "1.1", optional = true }
-snafu = "0.7.0"
-uuid = { version = "1.6.1", features = ["v4","fast-rng"] }
-zeroize = "1.4"
+rpassword = "^7.0"
+structopt = { version = "^0.3", features = ["paw"] }
+ureq = { version = "^2.9", features = ["json", "charset"] }
+byteorder = "^1.5"
+serde = {version = "^1.0", features = ["derive"]}
+log = { version = "^0.4", features = [ "std","max_level_debug", "release_max_level_warn"] }
+bytes = { version = "^1.6", optional = true }
+snafu = "^0.8"
+uuid = { version = "^1.8", features = ["v4","fast-rng"] }
+zeroize = "^1.7"
 base64 = "0.13"
-region = "3.0"
-arrayvec = "0.7"
+region = "^3.0"
+arrayvec = "^0.7"
 serde_json = "1.0"
-serde_path_to_error = "0.1"
+serde_path_to_error = "^0.1"
 cryptovec="0.6"
-bcrypt-pbkdf="0.7"
-ring = "0.16"
-rand = "0.8"
-nom_pem="4.0"
+bcrypt-pbkdf="^0.10"
+ring = "^0.17"
+rand = "^0.8"
+nom_pem="^4.0"
+ctr = "^0.9"
 [dependencies.block-modes]
 version = "0.8"
 optional = true

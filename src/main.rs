@@ -48,6 +48,7 @@ impl log::Log for SimpleLogger {
 
     fn flush(&self) {}
 }
+
 #[paw::main]
 fn main(args: Args) -> Result<(), crate::error::Error> {
     log::set_boxed_logger(Box::new(SimpleLogger))
@@ -73,7 +74,10 @@ fn main(args: Args) -> Result<(), crate::error::Error> {
     };
     print!("Please input your password: ");
     std::io::stdout().flush()?;
-    let passwd_str = rpassword::read_password()?;
+    let passwd_str = rpassword::read_password().map_or_else(|e| {
+        println!("\n****WARNING****: Cannot use TTY, falling back to stdin/stdout;Password will be visible on the screen");
+        rpassword::read_password_from_bufread(&mut std::io::BufReader::new(std::io::stdin())).unwrap()
+    }, |v| v);
 
     let two_factor_provider = match args.method.clone() {
         Some(method) => if method.eq_ignore_ascii_case("auth") {
