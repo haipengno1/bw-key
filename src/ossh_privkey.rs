@@ -79,21 +79,11 @@ impl TryInto<PrivateKey> for PKey<Private> {
 }
 
 pub fn parse_keystr(pem: &[u8], passphrase: Option<&str>) -> Result<PrivateKey> {
-    // HACK: Fix parsing problem of CRLF in nom_pem
-    let s;
-    let pemdata = if cfg!(windows) {
-        s = std::str::from_utf8(pem)
-            .map_err(|_| Error::InvalidPemFormat)?
-            .replace("\r\n", "\n");
-        nom_pem::decode_block(s.as_bytes()).map_err(|_| Error::InvalidPemFormat)?
-    } else {
-        nom_pem::decode_block(pem).map_err(|_| Error::InvalidPemFormat)?
-    };
-
-    match pemdata.block_type {
+    let pemdata= pem::parse(pem).unwrap();
+    match pemdata.tag() {
         "OPENSSH PRIVATE KEY" => {
             // Openssh format
-            decode_ossh_priv(&pemdata.data, passphrase)
+            decode_ossh_priv(&pemdata.contents(), passphrase)
         }
         "PRIVATE KEY" |
         "ENCRYPTED PRIVATE KEY" |//PKCS#8 format

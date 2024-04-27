@@ -31,7 +31,7 @@ cryptovec="0.6"
 bcrypt-pbkdf="^0.10"
 ring = "^0.17"
 rand = "^0.8"
-nom_pem="^4.0"
+pem = "^3"
 ctr = "^0.9"
 [dependencies.block-modes]
 version = "0.8"
