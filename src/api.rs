@@ -1,6 +1,9 @@
 use std::borrow::Borrow;
 use std::io::Read;
+
+use base64::{Engine as _, engine::{general_purpose::STANDARD, general_purpose::URL_SAFE_NO_PAD}};
 use log::debug;
+
 use crate::{cipherstring, Keys};
 use crate::prelude::*;
 
@@ -354,7 +357,7 @@ impl Client {
         let mut req:Vec<(&str,&str)>=Vec::new();
         req.push(("grant_type","password"));
         req.push( ("username",email));
-        let pass=base64::encode(master_password_hash.hash());
+        let pass=STANDARD.encode(master_password_hash.hash());
         req.push(  ("password",pass.borrow()));
         req.push(   ("scope","api offline_access"));
         req.push(   ("client_id","desktop"));
@@ -374,7 +377,7 @@ impl Client {
         let resp = ureq::post(&self.identity_url("/connect/token"))
             .set("Accept", "application/json")
             .set("auth-email",
-                 base64::encode_config(email, base64::URL_SAFE_NO_PAD).as_str())
+                 URL_SAFE_NO_PAD.encode(email).as_str())
             .send_form(
                 req.as_slice()
             );
