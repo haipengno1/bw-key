@@ -1,3 +1,7 @@
+use serde::{Deserialize, Deserializer, Serialize, Serializer, de};
+use serde::ser::SerializeTuple;
+use super::error::ProtoError;
+
 pub trait KeyTypeEnum {
     fn key_type(&self) -> String;
 }
@@ -62,7 +66,7 @@ macro_rules! impl_key_type_enum_ser_de {
                             }
                         )*
                         
-                        return Err(Error::custom(ProtoError::UnexpectedVariant));
+                        return Err(serde::de::Error::custom(ProtoError::UnexpectedVariant));
                     }
                 }
                 

@@ -34,9 +34,9 @@ pub struct RsaPrivateKey {
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq, Serialize, Deserialize)]
 pub struct EcDsaPrivateKey {
-    pub identifier: String,
-    pub q: MpInt,
-    pub d: MpInt,
+    pub curve_name: String,
+    pub public_key: Vec<u8>,
+    pub private_key: Vec<u8>,
 }
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -63,7 +63,7 @@ impl KeyType for EcDsaPrivateKey {
     const KEY_TYPE: &'static str = "ecdsa-sha2";
 
     fn key_type(&self) -> String {
-        format!("{}-{}", Self::KEY_TYPE, self.identifier)
+        format!("{}-{}", Self::KEY_TYPE, self.curve_name)
     }
 }
 

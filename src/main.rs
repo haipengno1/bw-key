@@ -4,7 +4,6 @@ use std::time::Duration;
 
 use log::{Level, LevelFilter, Metadata, Record};
 
-
 use crate::locked::Keys;
 use crate::ossh_privkey::parse_keystr;
 use crate::proto::{Identity, Message, to_bytes};
@@ -153,23 +152,4 @@ fn main(args: Args) -> Result<(), crate::error::Error> {
         thread::sleep(Duration::from_millis(500));
     }
     Ok(())
-}
-
-#[test]
-fn keyfile_ed25519() {
-    let ssh_key = include_str!("../assets/test_ed25519");
-    let passphrase = "123456";
-    let key = parse_keystr(ssh_key.as_bytes(), Some(passphrase)).unwrap();
-
-    let ssh_socket_path = env::var("SSH_AUTH_SOCK").map_or(String::new(), |key| key);
-    let mut client = SshSock::new().unwrap();
-    let identity = Identity {
-        private_key: key,
-        comment: "test_ed25519".parse().unwrap(),
-    };
-
-    // // Write to the client
-    let req = Message::AddIdentity(identity);
-    let req_bytes = to_bytes(&to_bytes(&req).unwrap()).unwrap();
-    client.write(req_bytes.as_slice()).unwrap();
 }

@@ -6,6 +6,8 @@ use bcrypt_pbkdf::bcrypt_pbkdf;
 use cryptovec::CryptoVec;
 use openssl::bn::BigNumRef;
 use openssl::dsa::Dsa;
+use openssl::ec::EcKey;
+use openssl::nid::Nid;
 use openssl::pkey::{Id, PKey, Private};
 use openssl::rsa::Rsa;
 use zeroize::Zeroizing;
@@ -71,15 +73,32 @@ impl TryInto<PrivateKey> for PKey<Private> {
                 Ok(PrivateKey::Dss(key))
             },
             Id::EC => {
-                Err(Error::UnsupportFormat)
+                let ec_key: EcKey<Private> = EcKey::try_from(self).map_err(|_| Error::InvalidKeyFormat)?;
+                let curve_name = match ec_key.group().curve_name() {
+                    Some(Nid::X9_62_PRIME256V1) => NIST_P256_NAME,
+                    Some(Nid::SECP384R1) => NIST_P384_NAME,
+                    Some(Nid::SECP521R1) => NIST_P521_NAME,
+                    _ => return Err(Error::UnsupportFormat)
+                };
+                
+                let private_key = ec_key.private_key().to_vec();
+                let mut ctx = openssl::bn::BigNumContext::new().unwrap();
+                let public_key = ec_key.public_key().to_bytes(ec_key.group(), openssl::ec::PointConversionForm::UNCOMPRESSED, &mut ctx).unwrap();
+                
+                let key = EcDsaPrivateKey {
+                    curve_name: curve_name.to_string(),
+                    public_key,
+                    private_key,
+                };
+                Ok(PrivateKey::EcDsa(key))
             },
-            _ =>   Err(Error::InvalidKeyFormat)
+            _ => Err(Error::InvalidKeyFormat)
         }
     }
 }
 
 pub fn parse_keystr(pem: &[u8], passphrase: Option<&str>) -> Result<PrivateKey> {
-    let pemdata= pem::parse(pem).unwrap();
+    let pemdata= pem::parse(pem).map_err(|_| Error::InvalidKeyFormat)?;
     match pemdata.tag() {
         "OPENSSH PRIVATE KEY" => {
             // Openssh format
@@ -92,14 +111,14 @@ pub fn parse_keystr(pem: &[u8], passphrase: Option<&str>) -> Result<PrivateKey> 
         "BEGIN PRIVATE KEY"  |//  Openssl Ed25519 Key
         "RSA PRIVATE KEY" => {
             // Openssl RSA Key
-            let pkey:PKey<Private>=match passphrase {
-                Some(passphrase)=>{
-                    PKey::private_key_from_pem_passphrase(pem, passphrase.as_bytes())
-                        .map_err(|_| Error::IncorrectPass)?
-                }
-                _ => {PKey::private_key_from_pem(pem).map_err(|_| Error::InvalidKeyFormat)?}
+            let pkey = if let Some(passphrase) = passphrase {
+                PKey::private_key_from_pem_passphrase(pem, passphrase.as_bytes())
+                    .map_err(|_| Error::IncorrectPass)?
+            } else {
+                PKey::private_key_from_pem(pem)
+                    .map_err(|_| Error::InvalidKeyFormat)?
             };
-            Ok(pkey.try_into()?)
+            pkey.try_into()
         }
         _ => Err(Error::UnsupportType),
     }
@@ -245,9 +264,9 @@ fn decode_key(reader: &mut SshBuf) -> Result<PrivateKey> {
             let privkey = reader.read_mpint()?;
 
             let key = EcDsaPrivateKey {
-                identifier: curvename.deref().clone(),
-                q: pubkey.to_vec(),
-                d: privkey,
+                curve_name: curvename.deref().clone(),
+                public_key: pubkey.to_vec(),
+                private_key: privkey,
             };
             PrivateKey::EcDsa(key)
         }
