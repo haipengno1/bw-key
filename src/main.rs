@@ -4,7 +4,6 @@ use std::time::Duration;
 
 use log::{Level, LevelFilter, Metadata, Record};
 
-use crate::locked::Keys;
 use crate::ossh_privkey::parse_keystr;
 use crate::proto::{Identity, Message, to_bytes};
 use crate::sshsock::SshSock;
@@ -74,7 +73,7 @@ fn main(args: Args) -> Result<(), crate::error::Error> {
     };
     print!("Please input your password: ");
     std::io::stdout().flush()?;
-    let passwd_str = rpassword::read_password().map_or_else(|e| {
+    let passwd_str = rpassword::read_password().map_or_else(|_e| {
         println!("\n****WARNING****: Cannot use TTY, falling back to stdin/stdout;Password will be visible on the screen");
         rpassword::read_password_from_bufread(&mut std::io::BufReader::new(std::io::stdin())).unwrap()
     }, |v| v);

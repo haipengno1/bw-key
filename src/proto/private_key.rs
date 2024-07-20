@@ -1,6 +1,6 @@
-use serde::{Deserialize, Serialize};
-use serde::de::{Deserializer, Error};
-use serde::ser::{Serializer, SerializeTuple};
+use serde::{Deserialize, Serialize, Serializer, Deserializer};
+use serde::de::{Error, SeqAccess, Visitor};
+use serde::ser::SerializeTuple;
 
 use super::error::ProtoError;
 use super::key_type::{KeyType, KeyTypeEnum};

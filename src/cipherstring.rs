@@ -1,6 +1,7 @@
 use crate::prelude::*;
 
 use block_modes::BlockMode as _;
+use base64::{Engine as _, engine::general_purpose::STANDARD};
 
 pub enum CipherString {
     Symmetric {
@@ -46,13 +47,13 @@ impl CipherString {
                     });
                 }
 
-                let iv = base64::decode(parts[0])
+                let iv = STANDARD.decode(parts[0])
                     .context(crate::error::InvalidBase64Snafu)?;
-                let ciphertext = base64::decode(parts[1])
+                let ciphertext = STANDARD.decode(parts[1])
                     .context(crate::error::InvalidBase64Snafu)?;
                 let mac = if parts.len() > 2 {
                     Some(
-                        base64::decode(parts[2])
+                        STANDARD.decode(parts[2])
                             .context(crate::error::InvalidBase64Snafu)?,
                     )
                 } else {
@@ -71,7 +72,7 @@ impl CipherString {
                 // https://github.com/bitwarden/jslib/blob/785b681f61f81690de6df55159ab07ae710bcfad/src/enums/encryptionType.ts#L8
                 // format is: <cipher_text_b64>|<hmac_sig>
                 let contents = contents.split('|').next().unwrap();
-                let ciphertext = base64::decode(contents)
+                let ciphertext = STANDARD.decode(contents)
                     .context(crate::error::InvalidBase64Snafu)?;
                 Ok(Self::Asymmetric { ciphertext })
             }
@@ -206,17 +207,17 @@ impl std::fmt::Display for CipherString {
                 ciphertext,
                 mac,
             } => {
-                let iv = base64::encode(&iv);
-                let ciphertext = base64::encode(&ciphertext);
+                let iv = STANDARD.encode(&iv);
+                let ciphertext = STANDARD.encode(&ciphertext);
                 if let Some(mac) = &mac {
-                    let mac = base64::encode(&mac);
+                    let mac = STANDARD.encode(&mac);
                     write!(f, "2.{}|{}|{}", iv, ciphertext, mac)
                 } else {
                     write!(f, "2.{}|{}", iv, ciphertext)
                 }
             }
             Self::Asymmetric { ciphertext } => {
-                let ciphertext = base64::encode(&ciphertext);
+                let ciphertext = STANDARD.encode(&ciphertext);
                 write!(f, "4.{}", ciphertext)
             }
         }

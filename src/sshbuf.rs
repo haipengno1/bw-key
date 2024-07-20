@@ -54,6 +54,7 @@ pub trait SshReadExt {
     /// Read a byte and convert it to boolean
     ///
     /// By definition, all non-zero value would be interpreted as true.
+    #[allow(dead_code)]
     fn read_bool(&mut self) -> Result<bool>;
 
     /// Read a byte from the stream
@@ -63,6 +64,7 @@ pub trait SshReadExt {
     fn read_uint32(&mut self) -> io::Result<u32>;
 
     /// Read 64 bits unsigned integer in big endian
+    #[allow(dead_code)]
     fn read_uint64(&mut self) -> io::Result<u64>;
 
     /// Read bytes array or string

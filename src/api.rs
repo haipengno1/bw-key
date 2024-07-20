@@ -107,6 +107,7 @@ struct ConnectPasswordRes {
     access_token: String,
     #[serde(skip_deserializing)]
     _expires_in: u32,
+    #[allow(dead_code)]
     token_type: String,
     refresh_token: String,
     #[serde(rename = "Key", alias = "key")]
@@ -140,10 +141,11 @@ pub struct SSHKeyRecord {
  struct SyncRes {
     #[serde(rename = "Ciphers", alias = "ciphers")]
      ciphers: Vec<SyncResCipher>,
-    #[serde(rename = "Profile", alias = "profile")]
-    profile: SyncResProfile,
     #[serde(rename = "Folders", alias = "folders")]
      folders: Vec<SyncResFolder>,
+    #[allow(dead_code)]
+    #[serde(rename = "Profile", alias = "profile")]
+    profile: SyncResProfile,
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
@@ -192,18 +194,23 @@ pub struct SSHKeyRecord {
 
 #[derive(serde::Deserialize, Debug)]
 struct SyncResProfile {
+    #[allow(dead_code)]
     #[serde(rename = "Key", alias = "key")]
     key: String,
+    #[allow(dead_code)]
     #[serde(rename = "PrivateKey", alias = "privateKey")]
     private_key: String,
+    #[allow(dead_code)]
     #[serde(rename = "Organizations", alias = "organizations")]
     organizations: Vec<SyncResProfileOrganization>,
 }
 
 #[derive(serde::Deserialize, Debug)]
 struct SyncResProfileOrganization {
+    #[allow(dead_code)]
     #[serde(rename = "Id", alias = "id")]
     id: String,
+    #[allow(dead_code)]
     #[serde(rename = "Key", alias = "key")]
     key: String,
 }

@@ -10,13 +10,13 @@ pub mod error;
 pub use self::ser::to_bytes;
 pub use self::de::from_bytes;
 
-pub use self::key_type::*;
 pub use self::private_key::*;
 pub use self::message::*;
 pub use self::error::*;
 
 use serde::{Serialize, Deserialize};
 
+#[allow(dead_code)]
 pub trait Blob: Sized {
     fn to_blob(&self) -> ProtoResult<Vec<u8>>;
     fn from_blob(blob: &[u8]) -> ProtoResult<Self>;
