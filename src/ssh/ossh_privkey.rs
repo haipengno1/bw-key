@@ -12,10 +12,10 @@ use openssl::pkey::{Id, PKey, Private};
 use openssl::rsa::Rsa;
 use zeroize::Zeroizing;
 
-use crate::cipher::Cipher;
+use crate::crypto::cipher::Cipher;
 use crate::error::{Error, Result};
 use crate::proto::{DssPrivateKey, EcDsaPrivateKey, Ed25519PrivateKey, PrivateKey, RsaPrivateKey};
-use crate::sshbuf::{SshBuf, SshReadExt};
+use crate::ssh::sshbuf::{SshBuf, SshReadExt};
 
 const KEY_MAGIC: &[u8] = b"openssh-key-v1\0";
 

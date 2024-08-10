@@ -4,7 +4,7 @@ use std::io::Read;
 use base64::{Engine as _, engine::{general_purpose::STANDARD, general_purpose::URL_SAFE_NO_PAD}};
 use log::debug;
 
-use crate::{cipherstring, locked::Keys};
+use crate::{crypto::cipherstring, locked::Keys};
 use crate::prelude::*;
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]

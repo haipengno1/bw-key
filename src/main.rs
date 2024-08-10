@@ -4,22 +4,27 @@ use std::time::Duration;
 
 use log::{Level, LevelFilter, Metadata, Record};
 
-use crate::ossh_privkey::parse_keystr;
-use crate::proto::{Identity, Message, to_bytes};
-use crate::sshsock::SshSock;
+use bw_key::ssh::ossh_privkey::parse_keystr;
+use bw_key::ssh::sshsock::SshSock;
+use bw_key::crypto::cipherstring::CipherString;
+use bw_key::proto::{Message, to_bytes, Identity as ProtoIdentity};
+use bw_key::api::{Client, TwoFactorProviderType};
+use bw_key::locked::{PasswordHash, Keys, Vec};
+use bw_key::prelude::Error as BwKeyError;
+use bw_key::identity::Identity as BwKeyIdentity;
+
+mod api;
+mod auth;
+mod core;
+mod crypto;
+mod error;
+mod identity;
+mod key;
+mod locked;
+mod ssh;
+mod prelude;
 
 mod proto;
-
-mod prelude;
-mod api;
-mod error;
-mod locked;
-mod identity;
-mod cipher;
-mod sshbuf;
-mod cipherstring;
-mod ossh_privkey;
-mod sshsock;
 
 #[derive(structopt::StructOpt)]
 /// Tool for add keys to ssh-agent from bitwarden server,support self-hosted server, just pass `--help`
@@ -49,7 +54,7 @@ impl log::Log for SimpleLogger {
 }
 
 #[paw::main]
-fn main(args: Args) -> Result<(), crate::error::Error> {
+fn main(args: Args) -> Result<(), BwKeyError> {
     log::set_boxed_logger(Box::new(SimpleLogger))
         .map(|()| log::set_max_level(LevelFilter::Info)).expect("log init failed");
     let mut ssh_client = SshSock::new()?;
@@ -80,15 +85,15 @@ fn main(args: Args) -> Result<(), crate::error::Error> {
 
     let two_factor_provider = match args.method.clone() {
         Some(method) => if method.eq_ignore_ascii_case("auth") {
-            Some(crate::api::TwoFactorProviderType::Authenticator)
+            Some(TwoFactorProviderType::Authenticator)
         } else if method.eq_ignore_ascii_case("email") {
-            Some(crate::api::TwoFactorProviderType::Email)
+            Some(TwoFactorProviderType::Email)
         } else if method.eq_ignore_ascii_case("duo") {
-            Some(crate::api::TwoFactorProviderType::Duo)
+            Some(TwoFactorProviderType::Duo)
         } else if method.eq_ignore_ascii_case("yubikey") {
-            Some(crate::api::TwoFactorProviderType::Yubikey)
+            Some(TwoFactorProviderType::Yubikey)
         } else if method.eq_ignore_ascii_case("u2f") {
-            Some(crate::api::TwoFactorProviderType::U2f)
+            Some(TwoFactorProviderType::U2f)
         } else {
             Option::None
         },
@@ -110,12 +115,12 @@ fn main(args: Args) -> Result<(), crate::error::Error> {
         }
     };
 
-    let client = crate::api::Client::new(&base_url, &identity_url);
-    let password = crate::locked::Password::new(
-        crate::locked::Vec::from_str(passwd_str.as_bytes())
+    let client = Client::new(&base_url, &identity_url);
+    let password = bw_key::locked::Password::new(
+        bw_key::locked::Vec::from_str(passwd_str.as_bytes())
     );
     let iterations = client.prelogin(&email)?;
-    let identity = crate::identity::Identity::new(email.as_str(), &password, iterations)?;
+    let identity = BwKeyIdentity::new(email.as_str(), &password, iterations)?;
     // login
     let (access_token, _refresh_token, protected_key) = client
         .login(
@@ -124,14 +129,14 @@ fn main(args: Args) -> Result<(), crate::error::Error> {
             two_factor_code,
             two_factor_provider,
         )?;
-    let master_keys = crate::cipherstring::CipherString::new(&protected_key)?
+    let master_keys = CipherString::new(&protected_key)?
         .decrypt_locked_symmetric(&identity.keys)?;
-    let pkey = crate::locked::Keys::new(master_keys);
+    let pkey = bw_key::locked::Keys::new(master_keys);
     //get ssh keys
     let ssh_keys = client.get_ssh_keys(access_token.as_str(), &pkey).unwrap();
     for ssh_key in ssh_keys {
         let key = parse_keystr(ssh_key.raw_key.as_slice(), ssh_key.passwd.as_deref()).unwrap();
-        let identity = Identity {
+        let identity = ProtoIdentity {
             private_key: key,
             comment: ssh_key.name.clone(),
         };
