@@ -5,11 +5,10 @@ use std::time::Duration;
 use log::{Level, LevelFilter, Metadata, Record};
 
 use bw_key::ssh::ossh_privkey::parse_keystr;
-use bw_key::ssh::sshsock::SshSock;
+use bw_key::ssh::ssh_socket::SshSocket;
 use bw_key::crypto::cipherstring::CipherString;
 use bw_key::proto::{Message, to_bytes, Identity as ProtoIdentity};
 use bw_key::api::{Client, TwoFactorProviderType};
-use bw_key::locked::{PasswordHash, Keys, Vec};
 use bw_key::prelude::Error as BwKeyError;
 use bw_key::identity::Identity as BwKeyIdentity;
 
@@ -57,7 +56,7 @@ impl log::Log for SimpleLogger {
 fn main(args: Args) -> Result<(), BwKeyError> {
     log::set_boxed_logger(Box::new(SimpleLogger))
         .map(|()| log::set_max_level(LevelFilter::Info)).expect("log init failed");
-    let mut ssh_client = SshSock::new()?;
+    let mut ssh_client = SshSocket::new()?;
     let base_url = args.host.clone().map_or(
         "https://api.bitwarden.com".to_string(),
         |url| format!("{}/api", url),

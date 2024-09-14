@@ -15,7 +15,7 @@ use zeroize::Zeroizing;
 use crate::crypto::cipher::Cipher;
 use crate::error::{Error, Result};
 use crate::proto::{DssPrivateKey, EcDsaPrivateKey, Ed25519PrivateKey, PrivateKey, RsaPrivateKey};
-use crate::ssh::sshbuf::{SshBuf, SshReadExt};
+use crate::ssh::ssh_buffer::{SshBuffer, SshReadExt};
 
 const KEY_MAGIC: &[u8] = b"openssh-key-v1\0";
 
@@ -159,7 +159,7 @@ fn decrypt_ossh_priv(
     ciphername: &str,
     kdfname: &str,
     kdf: &[u8],
-) -> Result<SshBuf> {
+) -> Result<SshBuffer> {
     let cipher = Cipher::from_str(ciphername)?;
 
     // Check if empty passphrase but encrypted
@@ -210,15 +210,15 @@ fn decrypt_ossh_priv(
         let n = cipher.decrypt_to(&mut cvec, privkey_data, key, iv)?;
         cvec.resize(n);
 
-        Ok(SshBuf::with_vec(cvec))
+        Ok(SshBuffer::with_vec(cvec))
     } else {
         let cvec = CryptoVec::from_slice(privkey_data);
-        Ok(SshBuf::with_vec(cvec))
+        Ok(SshBuffer::with_vec(cvec))
     }
 }
 
 #[allow(clippy::many_single_char_names)]
-fn decode_key(reader: &mut SshBuf) -> Result<PrivateKey> {
+fn decode_key(reader: &mut SshBuffer) -> Result<PrivateKey> {
     let keystring = Zeroizing::new(reader.read_utf8()?);
     let keyname: &str = keystring.as_str();
     let key = match keyname {
