@@ -1,5 +1,4 @@
 use std::io::Cursor;
-use std::ops::Deref;
 use std::str::FromStr;
 
 use bcrypt_pbkdf::bcrypt_pbkdf;
@@ -28,95 +27,102 @@ pub const NIST_P256_NAME: &str = "ecdsa-sha2-nistp256";
 pub const NIST_P384_NAME: &str = "ecdsa-sha2-nistp384";
 pub const NIST_P521_NAME: &str = "ecdsa-sha2-nistp521";
 
-fn padded_elem(elem: &BigNumRef)->Result<Vec<u8>>{
-    let e=elem.to_vec();
-    let e_len=e.len()+1;
-    elem.to_vec_padded(e_len as i32).map_err(|_|Error::InvalidKey)
+fn padded_elem(elem: &BigNumRef) -> Result<Vec<u8>> {
+    let e = elem.to_vec();
+    let e_len = e.len() + 1;
+    elem.to_vec_padded(e_len as i32).map_err(|_| Error::InvalidKey)
 }
+
 impl TryInto<PrivateKey> for PKey<Private> {
     type Error = Error;
 
     fn try_into(self) -> Result<PrivateKey> {
         match self.id() {
             Id::RSA => {
-                let rsa_key:Rsa<Private>= Rsa::try_from(self).unwrap();
+                let rsa_key: Rsa<Private> = Rsa::try_from(self).unwrap();
                 let n = padded_elem(rsa_key.n())?;
                 let e = padded_elem(rsa_key.e())?;
                 let d = padded_elem(rsa_key.d())?;
                 let iqmp = padded_elem(rsa_key.iqmp().unwrap())?;
                 let p = padded_elem(rsa_key.p().unwrap())?;
                 let q = padded_elem(rsa_key.q().unwrap())?;
-                let key = RsaPrivateKey{
+                let key = RsaPrivateKey {
                     n,
                     e,
                     d,
                     iqmp,
                     p,
-                    q
+                    q,
                 };
                 Ok(PrivateKey::Rsa(key))
             }
             Id::DSA => {
-                let dsa_key:Dsa<Private>= Dsa::try_from(self).unwrap();
+                let dsa_key: Dsa<Private> = Dsa::try_from(self).unwrap();
                 let p = padded_elem(dsa_key.p())?;
                 let q = padded_elem(dsa_key.q())?;
                 let g = padded_elem(dsa_key.g())?;
                 let pubkey = padded_elem(dsa_key.pub_key())?;
-                let privkey =padded_elem(dsa_key.priv_key())?;
-                let key = DssPrivateKey{
+                let privkey = padded_elem(dsa_key.priv_key())?;
+                let key = DssPrivateKey {
                     p,
                     q,
                     g,
                     y: pubkey,
-                    x: privkey
+                    x: privkey,
                 };
                 Ok(PrivateKey::Dss(key))
-            },
+            }
             Id::EC => {
                 let ec_key: EcKey<Private> = EcKey::try_from(self).map_err(|_| Error::InvalidKeyFormat)?;
                 let curve_name = match ec_key.group().curve_name() {
                     Some(Nid::X9_62_PRIME256V1) => NIST_P256_NAME,
                     Some(Nid::SECP384R1) => NIST_P384_NAME,
                     Some(Nid::SECP521R1) => NIST_P521_NAME,
-                    _ => return Err(Error::UnsupportFormat)
+                    _ => return Err(Error::UnsupportFormat),
                 };
-                
+
                 let private_key = ec_key.private_key().to_vec();
                 let mut ctx = openssl::bn::BigNumContext::new().unwrap();
-                let public_key = ec_key.public_key().to_bytes(ec_key.group(), openssl::ec::PointConversionForm::UNCOMPRESSED, &mut ctx).unwrap();
-                
+                let public_key = ec_key
+                    .public_key()
+                    .to_bytes(
+                        ec_key.group(),
+                        openssl::ec::PointConversionForm::UNCOMPRESSED,
+                        &mut ctx,
+                    )
+                    .unwrap();
+
                 let key = EcDsaPrivateKey {
                     curve_name: curve_name.to_string(),
                     public_key,
                     private_key,
                 };
                 Ok(PrivateKey::EcDsa(key))
-            },
-            _ => Err(Error::InvalidKeyFormat)
+            }
+            _ => Err(Error::InvalidKeyFormat),
         }
     }
 }
 
 pub fn parse_keystr(pem: &[u8], passphrase: Option<&str>) -> Result<PrivateKey> {
-    let pemdata= pem::parse(pem).map_err(|_| Error::InvalidKeyFormat)?;
+    let pemdata = pem::parse(pem).map_err(|_| Error::InvalidKeyFormat)?;
     match pemdata.tag() {
         "OPENSSH PRIVATE KEY" => {
             // Openssh format
             decode_ossh_priv(&pemdata.contents(), passphrase)
         }
-        "PRIVATE KEY" |
-        "ENCRYPTED PRIVATE KEY" |//PKCS#8 format
-        "DSA PRIVATE KEY" |//  Openssl DSA Key
-        "EC PRIVATE KEY"  |//  Openssl EC Key
-        "BEGIN PRIVATE KEY"  |//  Openssl Ed25519 Key
-        "RSA PRIVATE KEY" => {
+        "PRIVATE KEY"
+        | "ENCRYPTED PRIVATE KEY" //PKCS#8 format
+        | "DSA PRIVATE KEY" //  Openssl DSA Key
+        | "EC PRIVATE KEY" //  Openssl EC Key
+        | "BEGIN PRIVATE KEY" //  Openssl Ed25519 Key
+        | "RSA PRIVATE KEY" => {
             // Openssl RSA Key
             let pkey = if let Some(passphrase) = passphrase {
                 PKey::private_key_from_pem_passphrase(pem, passphrase.as_bytes())
                     .map_err(|_| Error::IncorrectPass)?
             } else {
-                PKey::private_key_from_pem(pem)
-                    .map_err(|_| Error::InvalidKeyFormat)?
+                PKey::private_key_from_pem(pem).map_err(|_| Error::InvalidKeyFormat)?
             };
             pkey.try_into()
         }
@@ -124,7 +130,7 @@ pub fn parse_keystr(pem: &[u8], passphrase: Option<&str>) -> Result<PrivateKey> 
     }
 }
 
- fn decode_ossh_priv(keydata: &[u8], passphrase: Option<&str>) -> Result<PrivateKey> {
+fn decode_ossh_priv(keydata: &[u8], passphrase: Option<&str>) -> Result<PrivateKey> {
     if keydata.len() >= 16 && &keydata[0..15] == KEY_MAGIC {
         let mut reader = Cursor::new(keydata);
         reader.set_position(15);
@@ -200,86 +206,64 @@ fn decrypt_ossh_priv(
             }
         };
 
-        // Splitting key & iv
-        let key = &keyder[..cipher.key_len()];
-        let iv = &keyder[cipher.key_len()..];
-
-        // Decrypt
-        let mut cvec = CryptoVec::new();
-        cvec.resize(cipher.calc_buffer_len(privkey_data.len()));
-        let n = cipher.decrypt_to(&mut cvec, privkey_data, key, iv)?;
-        cvec.resize(n);
-
-        Ok(SshBuffer::with_vec(cvec))
+        let mut decrypted = CryptoVec::new();
+        decrypted.extend(privkey_data);
+        cipher.decrypt_to(
+            &mut decrypted,
+            privkey_data,
+            &keyder[..cipher.key_len()],
+            &keyder[cipher.key_len()..],
+        )?;
+        Ok(SshBuffer::with_vec(decrypted))
     } else {
-        let cvec = CryptoVec::from_slice(privkey_data);
-        Ok(SshBuffer::with_vec(cvec))
+        let mut decrypted = CryptoVec::new();
+        decrypted.extend(privkey_data);
+        Ok(SshBuffer::with_vec(decrypted))
     }
 }
 
-#[allow(clippy::many_single_char_names)]
 fn decode_key(reader: &mut SshBuffer) -> Result<PrivateKey> {
-    let keystring = Zeroizing::new(reader.read_utf8()?);
-    let keyname: &str = keystring.as_str();
-    let key = match keyname {
-        RSA_NAME | RSA_SHA256_NAME | RSA_SHA512_NAME => {
+    let keytype = reader.read_utf8()?;
+    match keytype.as_str() {
+        RSA_NAME => {
             let n = reader.read_mpint()?;
             let e = reader.read_mpint()?;
             let d = reader.read_mpint()?;
             let iqmp = reader.read_mpint()?;
             let p = reader.read_mpint()?;
             let q = reader.read_mpint()?;
-            // let one = BigNum::from_u32(1) .map_err(|e|Error::InvalidKey)?;
-            // let dmp1 = &d % &(&p - &one);
-            // let dmq1 = &d % &(&q - &one);
-            let key = RsaPrivateKey {
-                n,
-                e,
-                d,
-                iqmp,
-                p,
-                q,
-            };
-            PrivateKey::Rsa(key)
+            let key = RsaPrivateKey { n, e, d, iqmp, p, q };
+            Ok(PrivateKey::Rsa(key))
         }
         DSA_NAME => {
             let p = reader.read_mpint()?;
             let q = reader.read_mpint()?;
             let g = reader.read_mpint()?;
-            let pubkey = reader.read_mpint()?;
-            let privkey = reader.read_mpint()?;
-            let key = DssPrivateKey {
-                p,
-                q,
-                g,
-                y: pubkey,
-                x: privkey,
-            };
-            PrivateKey::Dss(key)
-        }
-        NIST_P256_NAME | NIST_P384_NAME | NIST_P521_NAME => {
-            let curvename = Zeroizing::new(reader.read_utf8()?);
-
-            let pubkey = Zeroizing::new(reader.read_string()?);
-            let privkey = reader.read_mpint()?;
-
-            let key = EcDsaPrivateKey {
-                curve_name: curvename.deref().clone(),
-                public_key: pubkey.to_vec(),
-                private_key: privkey,
-            };
-            PrivateKey::EcDsa(key)
+            let y = reader.read_mpint()?;
+            let x = reader.read_mpint()?;
+            let key = DssPrivateKey { p, q, g, y, x };
+            Ok(PrivateKey::Dss(key))
         }
         ED25519_NAME => {
-            let pk = Zeroizing::new(reader.read_string()?).to_vec();
-            let sk = Zeroizing::new(reader.read_string()?).to_vec(); // Actually is an ed25519 keypair
-            let k = Ed25519PrivateKey {
-                enc_a: pk,
-                k_enc_a: sk,
+            let pubkey = reader.read_string()?;
+            let privkey = reader.read_string()?;
+            let key = Ed25519PrivateKey {
+                enc_a: pubkey,
+                k_enc_a: privkey,
             };
-            PrivateKey::Ed25519(k)
+            Ok(PrivateKey::Ed25519(key))
         }
-        _ => return Err(Error::UnsupportType),
-    };
-    Ok(key)
+        NIST_P256_NAME | NIST_P384_NAME | NIST_P521_NAME => {
+            let curve_name = keytype;
+            let public_key = reader.read_string()?;
+            let private_key = reader.read_mpint()?;
+            let key = EcDsaPrivateKey {
+                curve_name,
+                public_key,
+                private_key,
+            };
+            Ok(PrivateKey::EcDsa(key))
+        }
+        _ => Err(Error::UnsupportType),
+    }
 }

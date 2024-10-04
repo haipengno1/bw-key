@@ -56,6 +56,7 @@ named_pipe = "0.4"
 [features]
 default = ["rustcrypto-cipher"]
 rustcrypto-cipher = ["block-modes", "aes", "des", "cipher"]
+openssl-cipher = []
 
 [[bin]]
 name = "bw-key"

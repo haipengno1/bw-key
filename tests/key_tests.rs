@@ -2,9 +2,9 @@ extern crate bw_key;
 
 use std::io::Write;
 use std::process::Command;
-use bw_key::ssh::openssh_private_key::parse_keystr;
+use bw_key::ssh::ssh_key::parse_keystr;
 use bw_key::proto::{Identity, Message, to_bytes};
-use bw_key::ssh::ssh_socket::SshSock;
+use bw_key::ssh::ssh_socket::SshSocket;
 
 fn verify_key_added(comment: &str) -> bool {
     let output = Command::new("ssh-add")
@@ -38,7 +38,7 @@ fn test_key(ssh_key: &str, passphrase: Option<&str>, comment: &str) {
         }
     };
 
-    let mut client = match SshSock::new() {
+    let mut client = match SshSocket::new() {
         Ok(c) => {
             println!("Successfully created SSH socket");
             c

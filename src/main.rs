@@ -4,7 +4,7 @@ use std::time::Duration;
 
 use log::{Level, LevelFilter, Metadata, Record};
 
-use bw_key::ssh::ossh_privkey::parse_keystr;
+use bw_key::ssh::ssh_key::parse_keystr;
 use bw_key::ssh::ssh_socket::SshSocket;
 use bw_key::crypto::cipherstring::CipherString;
 use bw_key::proto::{Message, to_bytes, Identity as ProtoIdentity};
