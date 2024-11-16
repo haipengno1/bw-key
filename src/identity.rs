@@ -1,21 +1,22 @@
 use crate::prelude::*;
+use crate::core::locked::{Keys,Password,PasswordHash,Vec};
 
 pub struct Identity {
     pub email: String,
-    pub keys: crate::locked::Keys,
-    pub master_password_hash: crate::locked::PasswordHash,
+    pub keys: Keys,
+    pub master_password_hash: PasswordHash,
 }
 
 impl Identity {
     pub fn new(
         email: &str,
-        password: &crate::locked::Password,
+        password: &Password,
         iterations: u32,
     ) -> Result<Self> {
         let iterations = std::num::NonZeroU32::new(iterations)
             .context(crate::error::Pbkdf2ZeroIterationsSnafu)?;
 
-        let mut keys = crate::locked::Vec::new();
+        let mut keys = Vec::new();
         keys.extend(std::iter::repeat(0).take(64));
 
         let enc_key = &mut keys.data_mut()[0..32];
@@ -27,7 +28,7 @@ impl Identity {
             enc_key,
         );
 
-        let mut hash = crate::locked::Vec::new();
+        let mut hash = Vec::new();
         hash.extend(std::iter::repeat(0).take(32));
         ring::pbkdf2::derive(
             ring::pbkdf2::PBKDF2_HMAC_SHA256,
@@ -50,8 +51,8 @@ impl Identity {
             .fill(mac_key)
             .map_err(|_| Error::HkdfExpand)?;
 
-        let keys = crate::locked::Keys::new(keys);
-        let master_password_hash = crate::locked::PasswordHash::new(hash);
+        let keys = Keys::new(keys);
+        let master_password_hash = PasswordHash::new(hash);
 
         Ok(Self {
             email: email.to_string(),

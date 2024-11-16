@@ -2,6 +2,7 @@ use crate::prelude::*;
 
 use block_modes::BlockMode as _;
 use base64::{Engine as _, engine::general_purpose::STANDARD};
+use crate::core::locked::{Keys,Vec as LockedVec};
 
 pub enum CipherString {
     Symmetric {
@@ -111,7 +112,7 @@ impl CipherString {
 
     pub fn decrypt_symmetric(
         &self,
-        keys: &crate::locked::Keys,
+        keys: &Keys,
     ) -> Result<Vec<u8>> {
         match self {
             Self::Symmetric {
@@ -139,15 +140,15 @@ impl CipherString {
 
     pub fn decrypt_locked_symmetric(
         &self,
-        keys: &crate::locked::Keys,
-    ) -> Result<crate::locked::Vec> {
+        keys: &Keys,
+    ) -> Result<LockedVec> {
         match self {
             Self::Symmetric {
                 iv,
                 ciphertext,
                 mac,
             } => {
-                let mut res = crate::locked::Vec::new();
+                let mut res = LockedVec::new();
                 res.extend(ciphertext.iter().copied());
                 let cipher = decrypt_common_symmetric(
                     keys,
@@ -170,7 +171,7 @@ impl CipherString {
 }
 
 fn decrypt_common_symmetric(
-    keys: &crate::locked::Keys,
+    keys: &Keys,
     iv: &[u8],
     ciphertext: &[u8],
     mac: Option<&[u8]>,

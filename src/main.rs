@@ -1,16 +1,17 @@
-use std::{io, thread};
 use std::io::Write;
 use std::time::Duration;
+use std::{io, thread};
 
 use log::{Level, LevelFilter, Metadata, Record};
 
-use bw_key::ssh::ssh_key::parse_keystr;
-use bw_key::ssh::ssh_socket::SshSocket;
-use bw_key::crypto::cipherstring::CipherString;
-use bw_key::proto::{Message, to_bytes, Identity as ProtoIdentity};
-use bw_key::api::{Client, TwoFactorProviderType};
-use bw_key::prelude::Error as BwKeyError;
-use bw_key::identity::Identity as BwKeyIdentity;
+use crate::api::{Client, TwoFactorProviderType};
+use crate::core::locked::{Keys, Password, Vec as LockedVec};
+use crate::crypto::cipherstring::CipherString;
+use crate::identity::Identity as BwKeyIdentity;
+use crate::prelude::Error as BwKeyError;
+use crate::proto::{to_bytes, Identity as ProtoIdentity, Message};
+use crate::ssh::ssh_key::parse_keystr;
+use crate::ssh::ssh_socket::SshSocket;
 
 mod api;
 mod auth;
@@ -19,7 +20,6 @@ mod crypto;
 mod error;
 mod identity;
 mod key;
-mod locked;
 mod ssh;
 mod prelude;
 
@@ -69,17 +69,17 @@ fn main(args: Args) -> Result<(), BwKeyError> {
         Some(name) => name,
         None => {
             print!("Please input your email:");
-            std::io::stdout().flush()?;
+            io::stdout().flush()?;
             let mut ret = String::with_capacity(20);
             io::stdin().read_line(&mut ret).expect("Failed to read email");
             ret.trim().to_string()
         }
     };
     print!("Please input your password: ");
-    std::io::stdout().flush()?;
+    io::stdout().flush()?;
     let passwd_str = rpassword::read_password().map_or_else(|_e| {
         println!("\n****WARNING****: Cannot use TTY, falling back to stdin/stdout;Password will be visible on the screen");
-        rpassword::read_password_from_bufread(&mut std::io::BufReader::new(std::io::stdin())).unwrap()
+        rpassword::read_password_from_bufread(&mut io::BufReader::new(io::stdin())).unwrap()
     }, |v| v);
 
     let two_factor_provider = match args.method.clone() {
@@ -94,29 +94,29 @@ fn main(args: Args) -> Result<(), BwKeyError> {
         } else if method.eq_ignore_ascii_case("u2f") {
             Some(TwoFactorProviderType::U2f)
         } else {
-            Option::None
+            None
         },
         None => {
-            Option::None
+            None
         }
     };
     let mut ret;
     let two_factor_code = match two_factor_provider.clone() {
         Some(_tw) => {
             print!("Please input  two factor code:");
-            std::io::stdout().flush()?;
+            io::stdout().flush()?;
             ret = String::with_capacity(20);
             io::stdin().read_line(&mut ret).expect("Failed to get code");
             Some(ret.trim())
         }
         None => {
-            Option::None
+            None
         }
     };
 
     let client = Client::new(&base_url, &identity_url);
-    let password = bw_key::locked::Password::new(
-        bw_key::locked::Vec::from_str(passwd_str.as_bytes())
+    let password = Password::new(
+        LockedVec::from_str(passwd_str.as_bytes())
     );
     let iterations = client.prelogin(&email)?;
     let identity = BwKeyIdentity::new(email.as_str(), &password, iterations)?;
@@ -130,11 +130,11 @@ fn main(args: Args) -> Result<(), BwKeyError> {
         )?;
     let master_keys = CipherString::new(&protected_key)?
         .decrypt_locked_symmetric(&identity.keys)?;
-    let pkey = bw_key::locked::Keys::new(master_keys);
+    let pkey = Keys::new(master_keys);
     //get ssh keys
-    let ssh_keys = client.get_ssh_keys(access_token.as_str(), &pkey).unwrap();
+    let ssh_keys = client.get_ssh_keys(access_token.as_str(), &pkey)?;
     for ssh_key in ssh_keys {
-        let key = parse_keystr(ssh_key.raw_key.as_slice(), ssh_key.passwd.as_deref()).unwrap();
+        let key = parse_keystr(ssh_key.raw_key.as_slice(), ssh_key.passwd.as_deref())?;
         let identity = ProtoIdentity {
             private_key: key,
             comment: ssh_key.name.clone(),

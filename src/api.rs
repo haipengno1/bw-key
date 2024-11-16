@@ -4,7 +4,8 @@ use std::io::Read;
 use base64::{Engine as _, engine::{general_purpose::STANDARD, general_purpose::URL_SAFE_NO_PAD}};
 use log::debug;
 
-use crate::{crypto::cipherstring, locked::Keys};
+use crate::crypto::cipherstring;
+use crate::core::locked::{Keys,PasswordHash,Vec as LockedVec};
 use crate::prelude::*;
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
@@ -60,7 +61,7 @@ impl<'de> serde::Deserialize<'de> for TwoFactorProviderType {
     }
 }
 
-impl std::convert::TryFrom<u64> for TwoFactorProviderType {
+impl TryFrom<u64> for TwoFactorProviderType {
     type Error = Error;
 
     fn try_from(ty: u64) -> Result<Self> {
@@ -357,7 +358,7 @@ impl Client {
     pub fn login(
         &self,
         email: &str,
-        master_password_hash: &crate::locked::PasswordHash,
+        master_password_hash: &PasswordHash,
         two_factor_token: Option<&str>,
         two_factor_provider: Option<TwoFactorProviderType>,
     ) -> Result<(String, String, String)> {
@@ -414,7 +415,7 @@ impl Client {
         let plaintext = String::from_utf8(
             cipherstring.decrypt_symmetric(pkey).unwrap(),
         ).unwrap();
-        return plaintext
+        plaintext
     }
     fn get_raw_file(&self, url:&str, file_key:&String, pkey: &Keys) -> Vec<u8> {
         let resp = ureq::get(url)
@@ -431,11 +432,11 @@ impl Client {
         let cipherstring = cipherstring::CipherString::new(file_key.as_str()).unwrap();
         let file_master_keys = cipherstring.decrypt_symmetric(pkey).unwrap();
 
-        let  file_master_keys_vec = crate::locked::Vec::from_str(file_master_keys.as_slice());
+        let  file_master_keys_vec = LockedVec::from_str(file_master_keys.as_slice());
 
-        let file_pkey=crate::locked::Keys::new(file_master_keys_vec);
+        let file_pkey=Keys::new(file_master_keys_vec);
         let cipherstring = cipherstring::CipherString::from_raw_bytes(file.as_slice()).unwrap();
-        return cipherstring.decrypt_symmetric(&file_pkey).unwrap()
+        cipherstring.decrypt_symmetric(&file_pkey).unwrap()
     }
     pub fn get_ssh_keys(
         &self,
@@ -466,7 +467,7 @@ impl Client {
                         cipher.folder_id.as_ref().map(|cipher_folder_idstr|{
                             if cipher_folder_idstr.eq(ssh_folder_id) {
                                 let password=cipher.login.as_ref().map_or(
-                                    Option::None,
+                                    None,
                                     |login|login.password.as_ref())
                                     .map(|pass|self.decrypt(pass, pkey));
                                 cipher.attachments.as_ref().map(|attach|{
