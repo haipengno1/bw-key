@@ -14,12 +14,10 @@ use crate::ssh::ssh_key::parse_keystr;
 use crate::ssh::ssh_socket::SshSocket;
 
 mod api;
-mod auth;
 mod core;
 mod crypto;
 mod error;
 mod identity;
-mod key;
 mod ssh;
 mod prelude;
 
