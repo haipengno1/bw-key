@@ -7,7 +7,7 @@ use log::{Level, LevelFilter, Metadata, Record};
 use crate::api::{Client, TwoFactorProviderType};
 use crate::core::locked::{Keys, Password, Vec as LockedVec};
 use crate::crypto::cipherstring::CipherString;
-use crate::identity::Identity as BwKeyIdentity;
+use crate::core::identity::Identity as BwKeyIdentity;
 use crate::prelude::Error as BwKeyError;
 use crate::proto::{to_bytes, Identity as ProtoIdentity, Message};
 use crate::ssh::ssh_key::parse_keystr;
@@ -17,7 +17,6 @@ mod api;
 mod core;
 mod crypto;
 mod error;
-mod identity;
 mod ssh;
 mod prelude;
 
