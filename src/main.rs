@@ -60,7 +60,17 @@ impl log::Log for SimpleLogger {
     fn flush(&self) {}
 }
 
-fn main() -> Result<(), BwKeyError> {
+fn main() {
+    match run() {
+        Ok(_) => (),
+        Err(e) => {
+            eprintln!("Error: {}", e);
+            std::process::exit(1);
+        }
+    }
+}
+
+fn run() -> Result<(), BwKeyError> {
     let args = Args::parse();
     
     log::set_logger(&SimpleLogger)

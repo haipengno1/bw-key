@@ -11,8 +11,14 @@ Note: In this file, do not use the hard wrap in the middle of a sentence for com
 ## [Unreleased]
 
 ### Changed
+
+- Improved error handling to provide more descriptive messages
+- Enhanced API error reporting with detailed error sources
+- Refactored main function to better handle and display errors
 - Migrated from structopt to clap v4.4 for command-line argument parsing
 - Added password argument support to allow non-interactive password input
+- Simplified error types and improved error messages
+- Removed redundant error variants and unified error handling
 - Changed host option from `-h` to `-H` to avoid conflict with help option
 
 ## [0.1.2] - 2024-04-20

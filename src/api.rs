@@ -342,7 +342,7 @@ impl Client {
              }));
         match resp {
                 Ok(resp) => {
-                    let prelogin_res: PreloginRes = resp.into_json().context(crate::error::UreqSnafu)?;
+                    let prelogin_res: PreloginRes = resp.into_json()?;
                     debug!("{:?}",prelogin_res);
                     Ok(prelogin_res.kdf_iterations)
                 }
@@ -350,7 +350,7 @@ impl Client {
                     Err(Error::RequestFailed {status:code})
                 }
                 Err(_) => {
-                    Err(Error::UreqErr)
+                    Err(Error::UreqErr { source: Box::new(std::io::Error::new(std::io::ErrorKind::Other, "Network request failed")) })
                 }
         }
     }
@@ -393,7 +393,7 @@ impl Client {
             Ok(resp) => {
                 debug!("{:?}",resp);
                 let connect_res: ConnectPasswordRes =
-                    resp.into_json().context(crate::error::UreqSnafu)?;
+                    resp.into_json()?;
                 Ok((
                     connect_res.access_token,
                     connect_res.refresh_token,
@@ -402,10 +402,10 @@ impl Client {
             }
             Err(ureq::Error::Status(code, res)) => {
                 debug!("{:?}:{:?}",code,res);
-                Err(classify_login_error(&res.into_json().context(crate::error::UreqSnafu)?, code))
+                Err(classify_login_error(&res.into_json()?, code))
             }
             Err(_) => {
-                Err(Error::UreqErr)
+                Err(Error::UreqErr { source: Box::new(std::io::Error::new(std::io::ErrorKind::Other, "Network request failed")) })
             }
         }
     }
@@ -448,7 +448,7 @@ impl Client {
             .call();
         match res {
             Ok(resp) => {
-                let sync_res: SyncRes = resp.into_json().context(crate::error::UreqSnafu)?;
+                let sync_res: SyncRes = resp.into_json()?;
                 //find ssh folder
                 let mut ssh_folder_id:&String= &String::new();
                 for folder in &sync_res.folders {
@@ -518,7 +518,7 @@ impl Client {
                 }
             }
             Err(_) => {
-                Err(Error::UreqErr)
+                Err(Error::UreqErr { source: Box::new(std::io::Error::new(std::io::ErrorKind::Other, "Network request failed")) })
             }
         }
     }

@@ -1,143 +1,121 @@
 #[derive(Debug, snafu::Snafu)]
 #[snafu(visibility(pub(crate)))]
 pub enum Error {
-    #[snafu(display("email address not set"))]
+    #[snafu(display("Email address not set"))]
     ConfigMissingEmail,
 
-    #[snafu(display("failed to create block mode decryptor"))]
+    #[snafu(display("Failed to create block mode decryptor"))]
     CreateBlockMode {
         source: block_modes::InvalidKeyIvLength,
     },
 
-    #[snafu(display("failed to create directory at {}", file.display()))]
+    #[snafu(display("Failed to create directory at {}", file.display()))]
     CreateDirectory {
         source: std::io::Error,
         file: std::path::PathBuf,
     },
 
-    #[snafu(display("failed to decrypt"))]
+    #[snafu(display("Failed to decrypt data"))]
     Decrypt { source: block_modes::BlockModeError },
 
-    #[snafu(display("failed to parse pinentry output ({:?})", out))]
-    FailedToParsePinentry { out: String },
-
-    #[snafu(display(
-        "failed to run editor {}: {:?}",
-        editor.to_string_lossy(),
-        res
-    ))]
-    FailedToRunEditor {
-        editor: std::path::PathBuf,
-        res: std::process::ExitStatus,
-    },
-
-    #[snafu(display("failed to expand with hkdf"))]
+    #[snafu(display("Failed to expand with HKDF"))]
     HkdfExpand,
 
     #[snafu(display("{}", message))]
     IncorrectPassword { message: String },
 
-    #[snafu(display("invalid base64"))]
+    #[snafu(display("Invalid base64 encoding"))]
     InvalidBase64 { source: base64::DecodeError },
 
-    #[snafu(display("invalid cipherstring: {}", reason))]
+    #[snafu(display("Invalid cipherstring: {}", reason))]
     InvalidCipherString { reason: String },
 
-    #[snafu(display("invalid value for $EDITOR: {}", editor.to_string_lossy()))]
-    InvalidEditor { editor: std::ffi::OsString },
-
-    #[snafu(display("invalid mac"))]
+    #[snafu(display("Invalid MAC"))]
     InvalidMac,
 
-    #[snafu(display("invalid two factor provider type: {}", ty))]
+    #[snafu(display("Invalid key"))]
+    InvalidKey,
+
+    #[snafu(display("Invalid key format"))]
+    InvalidKeyFormat,
+
+    #[snafu(display("Invalid key or IV length"))]
+    InvalidKeyIvLength,
+
+    #[snafu(display("Invalid length"))]
+    InvalidLength,
+
+    #[snafu(display("Invalid two factor provider type: {}", ty))]
     InvalidTwoFactorProvider { ty: String },
 
-    #[snafu(display("failed to parse JSON"))]
+    #[snafu(display("Failed to parse JSON response"))]
     JSON {
         source: serde_path_to_error::Error<serde_json::Error>,
     },
 
-    #[snafu(display("failed to load config from {}", file.display()))]
+    #[snafu(display("Failed to load config from {}", file.display()))]
     LoadConfig {
         source: std::io::Error,
         file: std::path::PathBuf,
     },
 
-    #[snafu(display("ureq error"))]
-    Ureq { source: std::io::Error },
+    #[snafu(display("Network request error"))]
+    NetworkError { source: std::io::Error },
 
-    #[snafu(display("pbkdf2 requires at least 1 iteration (got 0)"))]
+    #[snafu(display("PBKDF2 requires at least 1 iteration (got 0)"))]
     Pbkdf2ZeroIterations,
 
-    #[snafu(display("api request returned error: {}", status))]
+    #[snafu(display("API request failed with status: {}", status))]
     RequestFailed { status: u16 },
 
-    #[snafu(display("api request unauthorized"))]
+    #[snafu(display("API request unauthorized"))]
     RequestUnauthorized,
 
-    #[snafu(display("Not  found SSH folder!Please Create it"))]
+    #[snafu(display("SSH folder not found. Please create it first."))]
     SSHKeyFolderNotFound,
 
-    #[snafu(display("error making api request"))]
-    UreqErr,
-
-    #[snafu(display("two factor required"))]
+    #[snafu(display("Two factor authentication required"))]
     TwoFactorRequired {
         providers: Vec<crate::api::TwoFactorProviderType>,
     },
 
-    #[snafu(display("unimplemented cipherstring type: {}", ty))]
+    #[snafu(display("Unimplemented cipherstring type: {}", ty))]
     UnimplementedCipherStringType { ty: String },
 
-    #[snafu(display("Unknown IO error"))]
-    UnknownIO { source: std::io::Error },
+    #[snafu(display("IO error: {}", source))]
+    IOError { source: std::io::Error },
 
-    #[snafu(display("The key file's PEM part is invalid"))]
+    #[snafu(display("Invalid PEM format in key file"))]
     InvalidPemFormat,
-    #[snafu(display("The key type is not supported"))]
+
+    #[snafu(display("Unsupported key type"))]
     UnsupportType,
-    #[snafu(display("The passphrase is incorrect, can't decrypt the key"))]
+
+    #[snafu(display("Incorrect passphrase"))]
     IncorrectPass,
-    #[snafu(display("The key file has some invalid data in it"))]
-    InvalidKeyFormat,
-    #[snafu(display("The error is caused by OpenSSL, to get the underlying error, use [std::error::Error::source()](https://doc.rust-lang.org/std/error/trait.Error.html#method.source)"))]
-    OpenSslError,
-    #[snafu(display("The error is caused by ed25519-dalek, to get the underlying error, use [std::error::Error::source()](https://doc.rust-lang.org/std/error/trait.Error.html#method.source)"))]
-    Ed25519Error,
-    #[snafu(display("The error is caused by I/O error or reader error"))]
-    IOError,
-    #[snafu(display("Can't format some data"))]
-    FmtError,
-    #[snafu(display("The base64 string is invalid"))]
-    Base64Error,
-    #[snafu(display("The argument passed into the function is invalid"))]
-    InvalidArgument,
-    #[snafu(display("The key format is not supported"))]
-    UnsupportFormat,
-    #[snafu(display("Currently not used..."))]
-    InvalidFormat,
-    #[snafu(display("Some parts of the key are invalid"))]
-    InvalidKey,
-    #[snafu(display("The key size is invalid"))]
-    InvalidKeySize,
-    #[snafu(display("The slice length is invalid"))]
-    InvalidLength,
-    #[snafu(display("The elliptic curve is not supported"))]
-    UnsupportCurve,
-    #[snafu(display("The encrypt cipher is not supported"))]
+
+    #[snafu(display("Unsupported cipher"))]
     UnsupportCipher,
-    #[snafu(display("The key type is not the desired one"))]
-    TypeNotMatch,
-    #[snafu(display("The key or IV length can't meet the cipher's requirement"))]
-    InvalidKeyIvLength,
-    #[snafu(display("Something shouldn't happen but it DID happen..."))]
+
+    #[snafu(display("Unsupported format"))]
+    UnsupportFormat,
+
+    #[snafu(display("Unknown error occurred"))]
     Unknown,
+
+    #[snafu(display("Error making API request: {}", source))]
+    UreqErr { source: Box<dyn std::error::Error + Send + Sync> },
 }
+
 impl From<std::io::Error> for Error {
     fn from(error: std::io::Error) -> Self {
-        Self::UnknownIO {
-            source:error
-        }
+        Error::IOError { source: error }
+    }
+}
+
+impl From<serde_json::Error> for Error {
+    fn from(error: serde_json::Error) -> Self {
+        Error::UreqErr { source: Box::new(error) }
     }
 }
 
