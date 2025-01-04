@@ -22,14 +22,25 @@ mod prelude;
 
 mod proto;
 
-#[derive(structopt::StructOpt)]
-/// Tool for add keys to ssh-agent from bitwarden server,support self-hosted server, just pass `--help`
+use clap::Parser;
+
+#[derive(Parser)]
+#[command(author, version, about = "Tool for add keys to ssh-agent from bitwarden server, support self-hosted server")]
 struct Args {
-    #[structopt(short, long, help = "The URL of the Bitwarden server to use. Defaults to the official server at `https://xxx.bitwarden.com/` if unset.")]
+    /// The URL of the Bitwarden server to use. Defaults to the official server if unset.
+    #[arg(short = 'H', long)]
     host: Option<String>,
-    #[structopt(short, long, help = "The email address to use as the account name when logging into the Bitwarden server. Required.")]
+
+    /// The email address to use as the account name when logging into the Bitwarden server. Required.
+    #[arg(short, long)]
     name: Option<String>,
-    #[structopt(short, long, help = "The two factor method to use when logging into the Bitwarden server,can be one of \"auth,email,duo,yubikey,u2f\"")]
+    
+    /// The password to use when logging into the Bitwarden server. If not provided, will be prompted.
+    #[arg(short, long)]
+    password: Option<String>,
+
+    /// The two factor method to use when logging into the Bitwarden server,can be one of "auth,email,duo,yubikey,u2f"
+    #[arg(short, long)]
     method: Option<String>,
 }
 
@@ -49,10 +60,13 @@ impl log::Log for SimpleLogger {
     fn flush(&self) {}
 }
 
-#[paw::main]
-fn main(args: Args) -> Result<(), BwKeyError> {
-    log::set_boxed_logger(Box::new(SimpleLogger))
-        .map(|()| log::set_max_level(LevelFilter::Info)).expect("log init failed");
+fn main() -> Result<(), BwKeyError> {
+    let args = Args::parse();
+    
+    log::set_logger(&SimpleLogger)
+        .map(|()| log::set_max_level(LevelFilter::Info))
+        .unwrap();
+
     let mut ssh_client = SshSocket::new()?;
     let base_url = args.host.clone().map_or(
         "https://api.bitwarden.com".to_string(),
@@ -72,12 +86,17 @@ fn main(args: Args) -> Result<(), BwKeyError> {
             ret.trim().to_string()
         }
     };
-    print!("Please input your password: ");
-    io::stdout().flush()?;
-    let passwd_str = rpassword::read_password().map_or_else(|_e| {
-        println!("\n****WARNING****: Cannot use TTY, falling back to stdin/stdout;Password will be visible on the screen");
-        rpassword::read_password_from_bufread(&mut io::BufReader::new(io::stdin())).unwrap()
-    }, |v| v);
+    let passwd_str = match args.password.clone() {
+        Some(passwd) => passwd,
+        None => {
+            print!("Please input your password: ");
+            io::stdout().flush()?;
+            rpassword::read_password().map_or_else(|_e| {
+                println!("\n****WARNING****: Cannot use TTY, falling back to stdin/stdout;Password will be visible on the screen");
+                rpassword::read_password_from_bufread(&mut io::BufReader::new(io::stdin())).unwrap()
+            }, |v| v)
+        }
+    };
 
     let two_factor_provider = match args.method.clone() {
         Some(method) => if method.eq_ignore_ascii_case("auth") {

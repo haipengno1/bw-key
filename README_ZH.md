@@ -27,9 +27,10 @@ FLAGS:
 -V, --version    打印版本信息
 
 OPTIONS:
--h, --host <host>    Bitwarden 服务器地址. 默认使用官方服务器 `https://xxx.bitwarden.com/` .
+-H, --host <host>    Bitwarden 服务器地址. 默认使用官方服务器 `https://xxx.bitwarden.com/` .
 -m, --method <method>  可选的，登录系统时使用的二次认证的方法，可以是 "auth,email,duo,yubikey,u2f"其中之一
 -n, --name <name>   登录Bitwarden 服务器用的email地址.
+-p, --password <password>    登录Bitwarden服务器用的密码. 如果不提供，将会提示输入.
 ```
 
 ## 感谢

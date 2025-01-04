@@ -11,9 +11,8 @@ readme = "README.md"
 edition = "2021"
 
 [dependencies]
-paw = "1.0.0"
 rpassword = "^7.0"
-structopt = { version = "^0.3", features = ["paw"] }
+clap = { version = "4.4", features = ["derive"] }
 ureq = { version = "^2.9", features = ["json", "charset"] }
 byteorder = "^1.5"
 serde = {version = "^1.0", features = ["derive"]}

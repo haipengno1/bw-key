@@ -25,9 +25,10 @@ FLAGS:
 -V, --version    Prints version information
 
 OPTIONS:
--h, --host <host>    The URL of the Bitwarden server to use. Defaults to the official server at `https://xxx.bitwarden.com/` if unset.
+-H, --host <host>    The URL of the Bitwarden server to use. Defaults to the official server at `https://xxx.bitwarden.com/` if unset.
 -m, --method <method>   Optional, The two factor method  to use as the account name when logging into the Bitwarden server,can be one of "auth,email,duo,yubikey,u2f"
 -n, --name <name>    The email address to use as the account name when logging into the Bitwarden server. Required.
+-p, --password <password>    The password to use when logging into the Bitwarden server. If not provided, will be prompted.
 ```
 ## thanks to :
 - [Bitwarden](https://bitwarden.com/).

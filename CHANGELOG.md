@@ -9,7 +9,14 @@ Note: In this file, do not use the hard wrap in the middle of a sentence for com
 -->
 
 ## [Unreleased]
+
+### Changed
+- Migrated from structopt to clap v4.4 for command-line argument parsing
+- Added password argument support to allow non-interactive password input
+- Changed host option from `-h` to `-H` to avoid conflict with help option
+
 ## [0.1.2] - 2024-04-20
+
 fixed:
 New version compatibility
 
