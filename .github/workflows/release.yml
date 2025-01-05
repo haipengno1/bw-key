@@ -60,10 +60,9 @@ jobs:
       - name: Install dependencies
         run: |
           if [ "$RUNNER_OS" == "Windows" ]; then
-            echo "VCPKG_ROOT=$VCPKG_INSTALLATION_ROOT" >> $GITHUB_ENV
+            echo "OPENSSL_NO_VENDOR=1" >> $GITHUB_ENV
+            echo "OPENSSL_DIR=C:/Program Files/OpenSSL-Win64" >> $GITHUB_ENV
             echo "RUSTFLAGS=$RUSTFLAGS -Ctarget-feature=+crt-static" >> $GITHUB_ENV
-            vcpkg update
-            vcpkg install openssl:x64-windows-static
           elif [ "$RUNNER_OS" == "Linux" ]; then
             sudo apt-get update
             sudo apt-get install -y libssl-dev pkg-config
@@ -74,6 +73,12 @@ jobs:
               echo "CXX_aarch64_unknown_linux_gnu=aarch64-linux-gnu-g++" >> $GITHUB_ENV
             fi
           fi
+
+      - name: Install OpenSSL (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          choco install openssl --no-progress -y
+          echo "C:\Program Files\OpenSSL-Win64\bin" >> $GITHUB_PATH
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
