@@ -73,6 +73,7 @@ impl Cipher {
     /// let n = cipher.decrypt_to(&mut buf, &src, &key, &iv).unwrap();
     /// buf.truncate(n);
     /// ```
+    #[allow(dead_code)]
     pub fn calc_buffer_len(self, len: usize) -> usize {
         calc_buflen(len, self.block_size())
     }
@@ -178,7 +179,7 @@ mod internal_impl {
             Err(Error::InvalidLength)
         }
     }
-
+    #[allow(dead_code)]
     pub fn calc_buflen(len: usize, block_size: usize) -> usize {
         let addi = (block_size - (len % block_size)) % block_size;
         len + addi

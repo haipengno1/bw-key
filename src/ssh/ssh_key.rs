@@ -19,7 +19,9 @@ use crate::ssh::ssh_buffer::{SshBuffer, SshReadExt};
 const KEY_MAGIC: &[u8] = b"openssh-key-v1\0";
 
 pub const RSA_NAME: &str = "ssh-rsa";
+#[allow(dead_code)]
 pub const RSA_SHA256_NAME: &str = "rsa-sha2-256";
+#[allow(dead_code)]
 pub const RSA_SHA512_NAME: &str = "rsa-sha2-512";
 pub const ED25519_NAME: &str = "ssh-ed25519";
 pub const DSA_NAME: &str = "ssh-dss";

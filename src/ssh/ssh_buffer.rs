@@ -46,9 +46,12 @@ impl Write for SshBuffer {
 
 /// [io::Read](https://doc.rust-lang.org/std/io/trait.Read.html) extension to read ssh data
 pub trait SshReadExt {
+    #[allow(dead_code)]
     fn read_bool(&mut self) -> io::Result<bool>;
+    #[allow(dead_code)]
     fn read_uint8(&mut self) -> io::Result<u8>;
     fn read_uint32(&mut self) -> io::Result<u32>;
+    #[allow(dead_code)]
     fn read_uint64(&mut self) -> io::Result<u64>;
     fn read_string(&mut self) -> io::Result<Vec<u8>>;
     fn read_utf8(&mut self) -> io::Result<String>;
