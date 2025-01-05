@@ -2,7 +2,8 @@
 
 All notable changes to this project will be documented in this file.
 
-This project adheres to [Semantic Versioning](https://semver.org).
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 <!--
 Note: In this file, do not use the hard wrap in the middle of a sentence for compatibility with GitHub comment style markdown rendering.
@@ -10,16 +11,20 @@ Note: In this file, do not use the hard wrap in the middle of a sentence for com
 
 ## [Unreleased]
 
-### Changed
+## [1.0.0] - 2025-01-05
 
-- Improved error handling to provide more descriptive messages
-- Enhanced API error reporting with detailed error sources
-- Refactored main function to better handle and display errors
+### Changed
 - Migrated from structopt to clap v4.4 for command-line argument parsing
 - Added password argument support to allow non-interactive password input
 - Simplified error types and improved error messages
-- Removed redundant error variants and unified error handling
+- Improved error handling to provide more descriptive messages
+- Enhanced API error reporting with detailed error sources
+- Refactored main function to better handle and display errors
 - Changed host option from `-h` to `-H` to avoid conflict with help option
+- Removed redundant error variants and unified error handling
+
+### Fixed
+- Suppressed dead code warnings in unused functions and constants
 
 ## [0.1.2] - 2024-04-20
 

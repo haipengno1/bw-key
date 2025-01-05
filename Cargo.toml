@@ -1,7 +1,7 @@
 [package]
 name = "bw-key"
 description = "Tool for add keys to ssh-agent from bitwarden server"
-version = "0.1.2"
+version = "1.0.0"
 license = "Apache"
 authors = [
     "berton wang <haipengno1@gmail.com>"
