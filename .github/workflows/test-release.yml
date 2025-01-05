@@ -1,9 +1,13 @@
-name: Release
+name: Test Release Process
 
 on:
-  push:
-    tags:
-      - v[0-9]+.*
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Dry run (no actual release)'
+        required: true
+        default: 'true'
+        type: boolean
 
 env:
   CARGO_INCREMENTAL: 0
@@ -17,23 +21,24 @@ defaults:
     shell: bash
 
 jobs:
-  create-release:
+  test-build:
     if: github.repository_owner == 'haipengno1'
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
-      - uses: taiki-e/create-gh-release-action@v1
-        with:
-          changelog: CHANGELOG.md
-          title: $version
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Test Release Creation
+        if: inputs.dry_run
+        run: |
+          echo "Testing release creation with changelog:"
+          cat CHANGELOG.md
+          echo "Would create release based on the above changelog"
 
-  upload-assets:
-    name: ${{ matrix.target }}
+  test-assets:
+    name: Test ${{ matrix.target }}
     if: github.repository_owner == 'haipengno1'
     needs:
-      - create-release
+      - test-build
     strategy:
       fail-fast: false
       matrix:
@@ -69,11 +74,15 @@ jobs:
         with:
           targets: ${{ matrix.target }}
 
-      - uses: taiki-e/upload-rust-binary-action@v1
-        with:
-          bin: bw-key
-          target: ${{ matrix.target }}
-          tar: unix
-          zip: windows
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build Binary
+        run: cargo build --release --target ${{ matrix.target }}
+
+      - name: Test Binary Artifacts
+        run: |
+          echo "Testing binary for ${{ matrix.target }}"
+          ls -l target/${{ matrix.target }}/release/
+          if [ "$RUNNER_OS" == "Windows" ]; then
+            echo "Would create zip archive for Windows"
+          else
+            echo "Would create tar archive for Unix"
+          fi
